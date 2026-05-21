@@ -1,0 +1,117 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Role: USER | BUSINESS
+// PlaceCategory: FOOD | CULTURE | NIGHTLIFE | NATURE | SHOPPING | CAFE
+// TransportMode: WALK | BUS | TAXI | BIKE
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  name        String?
+  role        String   @default("USER")
+  preferences String?
+  createdAt   DateTime @default(now())
+
+  reviews          Review[]
+  itineraries      Itinerary[]
+  ownedPlaces      Place[]          @relation("PlaceOwner")
+  businessProfile  BusinessProfile?
+}
+
+model Place {
+  id           String   @id @default(cuid())
+  name         String
+  description  String
+  category     String
+  vibes        String
+  lat          Float
+  lng          Float
+  address      String
+  city         String
+  priceLevel   Int      @default(2)
+  openingHours String?
+  images       String
+  ownerId      String?
+  avgRating    Float    @default(0)
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  owner   User?    @relation("PlaceOwner", fields: [ownerId], references: [id])
+  reviews Review[]
+  events  Event[]
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  placeId   String
+  rating    Int
+  comment   String?
+  vibeTags  String
+  photos    String   @default("[]")
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+}
+
+model Itinerary {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  date      DateTime?
+  stops     String
+  isPublic  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  placeId     String?
+  startTime   DateTime
+  endTime     DateTime
+  category    String
+  lat         Float
+  lng         Float
+
+  place Place? @relation(fields: [placeId], references: [id])
+}
+
+model TransportRoute {
+  id          String @id @default(cuid())
+  fromLat     Float
+  fromLng     Float
+  toLat       Float
+  toLng       Float
+  mode        String
+  durationMin Int
+  distanceKm  Float
+  cost        Float
+}
+
+model BusinessProfile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  businessName String
+  description  String
+  category     String
+  arbkNumber   String?
+  website      String?
+  phone        String?
+  verified     Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
