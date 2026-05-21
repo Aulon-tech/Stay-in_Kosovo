@@ -29,12 +29,19 @@ export default withAuth(
           "/map",
           "/vibes",
           "/place",
+          "/itinerary/share",
         ];
         const path = req.nextUrl.pathname;
         if (publicPaths.some((p) => path === p || path.startsWith(p + "/"))) {
           return true;
         }
-        if (path.startsWith("/api/places") || path.startsWith("/api/recommendations") || path.startsWith("/api/events") || path.startsWith("/api/transport")) {
+        if (
+          path.startsWith("/api/places") ||
+          path.startsWith("/api/recommendations") ||
+          path.startsWith("/api/events") ||
+          path.startsWith("/api/transport") ||
+          path.startsWith("/api/itinerary/share")
+        ) {
           return true;
         }
         return !!token;

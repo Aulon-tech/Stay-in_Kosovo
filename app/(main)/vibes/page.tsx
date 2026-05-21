@@ -8,6 +8,7 @@ import { useGeolocation } from "@/components/geo/useGeolocation";
 import { useAppStore } from "@/lib/store";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useToastStore } from "@/lib/toast-store";
 
 const VIBE_MOODS = [
   { id: "cozy", label: "Cozy evening", desc: "Warm corners & slow nights" },
@@ -23,6 +24,7 @@ export default function VibesPage() {
   const { lat, lng, addPendingStop } = useAppStore();
   const { data: session } = useSession();
   const router = useRouter();
+  const pushToast = useToastStore((s) => s.push);
   const [activeVibe, setActiveVibe] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -117,7 +119,14 @@ export default function VibesPage() {
                   }}
                   onAddItinerary={
                     session
-                      ? () => addPendingStop(r.place.id, r.place.name)
+                      ? () => {
+                          addPendingStop(r.place.id, r.place.name);
+                          pushToast({
+                            message: `Shtuar: ${r.place.name}`,
+                            actionLabel: "Plani",
+                            actionHref: "/itinerary",
+                          });
+                        }
                       : undefined
                   }
                 />

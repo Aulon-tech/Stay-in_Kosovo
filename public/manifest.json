@@ -1,0 +1,10 @@
+{
+  "name": "Stay in Kosovo",
+  "short_name": "Stay KS",
+  "description": "Discover Kosovo by vibe, plan trips, get around",
+  "start_url": "/discover",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#b91c1c",
+  "orientation": "portrait"
+}

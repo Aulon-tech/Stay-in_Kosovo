@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseJson, ItineraryStop } from "@/lib/utils";
+import { itinerarySchema } from "@/lib/validations";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -31,13 +32,18 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const body = await req.json();
+  const raw = await req.json();
+  const parsed = itinerarySchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  }
+  const body = parsed.data;
   const it = await prisma.itinerary.create({
     data: {
       userId: session.user.id,
-      title: body.title || "New itinerary",
+      title: body.title,
       date: body.date ? new Date(body.date) : null,
-      stops: JSON.stringify(body.stops || []),
+      stops: JSON.stringify(body.stops),
       isPublic: body.isPublic ?? false,
     },
   });

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { parseJson } from "@/lib/utils";
+import { reviewSchema } from "@/lib/validations";
+import { refreshPlaceFeelsLike } from "@/lib/refresh-feels-like";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -31,11 +33,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const body = await req.json();
+  const parsed = reviewSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  }
+  const data = parsed.data;
   const photos: string[] = [];
 
-  if (body.photoBase64) {
+  if (data.photoBase64) {
     try {
-      const base64 = body.photoBase64.replace(/^data:image\/\w+;base64,/, "");
+      const base64 = data.photoBase64.replace(/^data:image\/\w+;base64,/, "");
       const buf = Buffer.from(base64, "base64");
       const dir = path.join(process.cwd(), "public", "uploads");
       await mkdir(dir, { recursive: true });
@@ -50,20 +57,21 @@ export async function POST(req: Request) {
   const review = await prisma.review.create({
     data: {
       userId: session.user.id,
-      placeId: body.placeId,
-      rating: body.rating,
-      comment: body.comment || null,
-      vibeTags: JSON.stringify(body.vibeTags || []),
+      placeId: data.placeId,
+      rating: data.rating,
+      comment: data.comment || null,
+      vibeTags: JSON.stringify(data.vibeTags || []),
       photos: JSON.stringify(photos),
     },
   });
 
-  const all = await prisma.review.findMany({ where: { placeId: body.placeId } });
+  const all = await prisma.review.findMany({ where: { placeId: data.placeId } });
   const avg = all.reduce((s, r) => s + r.rating, 0) / all.length;
   await prisma.place.update({
-    where: { id: body.placeId },
+    where: { id: data.placeId },
     data: { avgRating: Math.round(avg * 10) / 10 },
   });
+  await refreshPlaceFeelsLike(data.placeId);
 
   return NextResponse.json({
     ...review,

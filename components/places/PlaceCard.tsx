@@ -12,7 +12,7 @@ export type PlaceCardData = {
   images: string[];
   avgRating: number;
   distanceKm?: number | null;
-  feelsLike?: string;
+  feelsLike?: string | null;
 };
 
 const CATEGORY_COLORS: Record<string, string> = {

@@ -1,0 +1,68 @@
+export type Locale = "en" | "sq";
+
+const dict = {
+  en: {
+    discover: "Discover",
+    map: "Map",
+    vibes: "Vibes",
+    plan: "Plan",
+    profile: "Profile",
+    searchPlaceholder: "Search places in Kosovo…",
+    vibePrompt: "What's the vibe right now?",
+    getRecs: "Get recommendations",
+    thinking: "Thinking…",
+    clearAll: "Clear · show all",
+    loadingPlaces: "Loading places…",
+    noPlaces: "No places match your filters.",
+    tryOtherFilters: "Try other filters or widen distance.",
+    gettingLocation: "Getting your location…",
+    addedItinerary: "Added to queue",
+    goToPlan: "Open Plan to save",
+    todayEvents: "Today in Kosovo",
+    openNow: "Open now",
+    anyDist: "Any distance",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    share: "Share",
+    directions: "Directions",
+    googleMaps: "Google Maps",
+    waze: "Waze",
+    saved: "Saved",
+    language: "Language",
+  },
+  sq: {
+    discover: "Zbulo",
+    map: "Harta",
+    vibes: "Vibes",
+    plan: "Plani",
+    profile: "Profili",
+    searchPlaceholder: "Kërko vende në Kosovë…",
+    vibePrompt: "Çfarë vibe ka tani?",
+    getRecs: "Merr rekomandime",
+    thinking: "Duke menduar…",
+    clearAll: "Pastro · shfaq të gjitha",
+    loadingPlaces: "Duke ngarkuar vendet…",
+    noPlaces: "Asnjë vend nuk përputhet me filtrat.",
+    tryOtherFilters: "Provo filtra të tjerë ose zmadho distancën.",
+    gettingLocation: "Duke marrë vendndodhjen…",
+    addedItinerary: "Shtuar në radhë",
+    goToPlan: "Hap Planin për ta ruajtur",
+    todayEvents: "Sot në Kosovë",
+    openNow: "Hapur tani",
+    anyDist: "Çdo distancë",
+    signIn: "Hyr",
+    signOut: "Dil",
+    share: "Ndaj",
+    directions: "Drejtime",
+    googleMaps: "Google Maps",
+    waze: "Waze",
+    saved: "U ruajt",
+    language: "Gjuha",
+  },
+} as const;
+
+export type I18nKey = keyof typeof dict.en;
+
+export function t(key: I18nKey, locale: Locale = "en"): string {
+  return dict[locale][key] || dict.en[key];
+}

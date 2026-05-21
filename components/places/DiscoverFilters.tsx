@@ -1,74 +1,89 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 import { VIBES } from "@/lib/utils";
 
 const CATEGORIES = ["", "FOOD", "CULTURE", "NIGHTLIFE", "NATURE", "SHOPPING", "CAFE"];
-const DISTANCES = [null, 1, 3, 5, 10];
+const DISTANCES = [null, 1, 3, 5, 10] as const;
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+        active
+          ? "bg-red-600 text-white"
+          : "bg-white text-gray-700 border border-gray-200"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 export function DiscoverFilters() {
-  const { filters, setFilters } = useAppStore();
+  const { filters, setFilters, resetFilters } = useAppStore();
+  const { t } = useTranslation();
+
   return (
-    <div className="space-y-2 border-b border-gray-200 bg-white p-3">
-      <select
-        className="w-full rounded border border-gray-300 p-2 text-sm"
-        value={filters.category}
-        onChange={(e) => setFilters({ category: e.target.value })}
-      >
-        <option value="">All categories</option>
-        {CATEGORIES.filter(Boolean).map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-      <select
-        className="w-full rounded border border-gray-300 p-2 text-sm"
-        value={filters.vibe}
-        onChange={(e) => setFilters({ vibe: e.target.value })}
-      >
-        <option value="">All vibes</option>
-        {VIBES.map((v) => (
-          <option key={v} value={v}>
-            {v}
-          </option>
-        ))}
-      </select>
-      <div className="flex flex-wrap gap-2">
-        {DISTANCES.map((d) => (
-          <button
-            key={String(d)}
-            type="button"
-            onClick={() => setFilters({ distance: d })}
-            className={`rounded px-2 py-1 text-xs ${
-              filters.distance === d ? "bg-blue-600 text-white" : "bg-gray-100"
-            }`}
+    <div className="space-y-2 border-b border-gray-200 bg-gray-50 px-3 py-3">
+      <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Category">
+        {CATEGORIES.map((c) => (
+          <Chip
+            key={c || "all"}
+            active={filters.category === c}
+            onClick={() => setFilters({ category: c })}
           >
-            {d ? `${d} km` : "Any dist"}
-          </button>
+            {c || "All"}
+          </Chip>
         ))}
       </div>
-      <div className="flex gap-2">
-        {[null, 2, 3, 4].map((p) => (
-          <button
-            key={String(p)}
-            type="button"
-            onClick={() => setFilters({ price: p })}
-            className={`rounded px-2 py-1 text-xs ${
-              filters.price === p ? "bg-blue-600 text-white" : "bg-gray-100"
-            }`}
+      <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Vibe">
+        <Chip active={!filters.vibe} onClick={() => setFilters({ vibe: "" })}>
+          All vibes
+        </Chip>
+        {VIBES.map((v) => (
+          <Chip
+            key={v}
+            active={filters.vibe === v}
+            onClick={() => setFilters({ vibe: v })}
           >
-            {p ? `€`.repeat(p) : "Any $"}
-          </button>
+            {v}
+          </Chip>
         ))}
+      </div>
+      <div className="flex gap-2 overflow-x-auto" role="group" aria-label="Distance">
+        {DISTANCES.map((d) => (
+          <Chip
+            key={String(d)}
+            active={filters.distance === d}
+            onClick={() => setFilters({ distance: d })}
+          >
+            {d ? `${d} km` : t("anyDist")}
+          </Chip>
+        ))}
+        <Chip
+          active={filters.openNow}
+          onClick={() => setFilters({ openNow: !filters.openNow })}
+        >
+          {t("openNow")}
+        </Chip>
         <button
           type="button"
-          onClick={() => setFilters({ openNow: !filters.openNow })}
-          className={`rounded px-2 py-1 text-xs ${
-            filters.openNow ? "bg-green-600 text-white" : "bg-gray-100"
-          }`}
+          onClick={resetFilters}
+          className="shrink-0 text-xs text-gray-500 underline"
         >
-          Open now
+          Reset
         </button>
       </div>
     </div>

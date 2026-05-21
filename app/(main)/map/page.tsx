@@ -9,11 +9,17 @@ import { DiscoverFilters } from "@/components/places/DiscoverFilters";
 import { useGeolocation } from "@/components/geo/useGeolocation";
 import { useAppStore } from "@/lib/store";
 import { useSession } from "next-auth/react";
+import { useToastStore } from "@/lib/toast-store";
+import { useTranslation } from "@/lib/hooks/useTranslation";
+import { fetchPlacesList } from "@/lib/places-api";
+import { DirectionLinks } from "@/components/directions/DirectionLinks";
 
 export default function MapPage() {
   useGeolocation();
   const { lat, lng, filters, showEvents, showTransit, setShowEvents, setShowTransit, addPendingStop } = useAppStore();
   const { data: session } = useSession();
+  const pushToast = useToastStore((s) => s.push);
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<MapPlace | null>(null);
   const [transport, setTransport] = useState<{ label: string; mode: string }[]>([]);
 
@@ -23,13 +29,11 @@ export default function MapPage() {
   if (filters.distance) qs.set("distance", String(filters.distance));
   if (filters.openNow) qs.set("openNow", "true");
 
-  const { data: places } = useQuery({
+  const { data: placesData } = useQuery({
     queryKey: ["map-places", lat, lng, filters],
-    queryFn: async () => {
-      const res = await fetch(`/api/places?${qs}`);
-      return res.json();
-    },
+    queryFn: () => fetchPlacesList(qs.toString()),
   });
+  const places = placesData?.items;
 
   const { data: events } = useQuery({
     queryKey: ["events"],
@@ -74,7 +78,7 @@ export default function MapPage() {
         </label>
       </div>
       <MapView
-        places={(places || []).map((p: MapPlace & { lat: number; lng: number }) => ({
+        places={(places || []).map((p) => ({
           id: p.id,
           name: p.name,
           lat: p.lat,
@@ -91,13 +95,16 @@ export default function MapPage() {
           <p className="text-xs text-gray-500">{selected.category}</p>
           {showTransit && transport.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
-              {transport.map((t) => (
-                <span key={t.mode} className="rounded bg-gray-100 px-2 py-0.5 text-xs">
-                  {t.label}
+              {transport.map((tr) => (
+                <span key={tr.mode} className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+                  {tr.label}
                 </span>
               ))}
             </div>
           )}
+          <div className="mt-2">
+            <DirectionLinks lat={selected.lat} lng={selected.lng} name={selected.name} />
+          </div>
           <div className="mt-3 flex gap-2">
             <Link
               href={`/place/${selected.id}`}
@@ -111,7 +118,11 @@ export default function MapPage() {
                 className="flex-1 rounded bg-blue-600 py-2 text-sm text-white"
                 onClick={() => {
                   addPendingStop(selected.id, selected.name);
-                  alert("Added to itinerary queue — open Plan to save");
+                  pushToast({
+                    message: `${t("addedItinerary")}: ${selected.name}`,
+                    actionLabel: t("goToPlan"),
+                    actionHref: "/itinerary",
+                  });
                 }}
               >
                 Add to itinerary

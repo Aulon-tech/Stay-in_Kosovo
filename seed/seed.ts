@@ -152,6 +152,7 @@ async function main() {
         ownerId,
         avgRating: p.avgRating || 4.0,
         isVerified: p.isVerified ?? false,
+        feelsLike: `Feels like: a ${p.vibes[0] || "local"} experience in ${p.city}`,
       },
     });
     createdPlaces.push(place);

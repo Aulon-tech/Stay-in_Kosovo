@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { registerSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name, role } = await req.json();
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+    const ip = req.headers.get("x-forwarded-for") || "register";
+    const rl = rateLimit(`register:${ip}`, 5, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `Too many attempts. Retry in ${rl.retryAfter}s` },
+        { status: 429 }
+      );
     }
+    const body = await req.json();
+    const parsed = registerSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    }
+    const { email, password, name, role } = parsed.data;
     const existing = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });

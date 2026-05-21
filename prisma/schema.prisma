@@ -42,6 +42,7 @@ model Place {
   images       String
   ownerId      String?
   avgRating    Float    @default(0)
+  feelsLike    String?
   isVerified   Boolean  @default(false)
   createdAt    DateTime @default(now())
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseJson } from "@/lib/utils";
-import { generateVibeSummary } from "@/lib/vibe-summary";
+import { refreshPlaceFeelsLike } from "@/lib/refresh-feels-like";
 
 export async function GET(
   _req: Request,
@@ -20,11 +20,10 @@ export async function GET(
   if (!place) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  const feelsLike = await generateVibeSummary(
-    place.name,
-    parseJson<string[]>(place.vibes, []),
-    place.reviews
-  );
+  let feelsLike = place.feelsLike;
+  if (!feelsLike) {
+    feelsLike = (await refreshPlaceFeelsLike(place.id)) || null;
+  }
   return NextResponse.json({
     ...place,
     vibes: parseJson(place.vibes, []),

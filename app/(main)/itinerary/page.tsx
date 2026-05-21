@@ -7,6 +7,10 @@ import { MobileShell } from "@/components/layout/MobileShell";
 import { useGeolocation } from "@/components/geo/useGeolocation";
 import { useAppStore } from "@/lib/store";
 import { calculateTransportOptions } from "@/lib/transport";
+import { fetchPlacesList } from "@/lib/places-api";
+import { PendingStopsBanner } from "@/components/itinerary/PendingStopsBanner";
+import { SortableStops } from "@/components/itinerary/SortableStops";
+import { useToastStore } from "@/lib/toast-store";
 
 type Stop = {
   placeId: string;
@@ -27,6 +31,7 @@ type Itinerary = {
 export default function ItineraryPage() {
   useGeolocation();
   const { lat, lng, pendingStops, clearPendingStops } = useAppStore();
+  const pushToast = useToastStore((s) => s.push);
   const qc = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [stops, setStops] = useState<Stop[]>([]);
@@ -42,13 +47,11 @@ export default function ItineraryPage() {
     },
   });
 
-  const { data: places } = useQuery({
+  const { data: placesData } = useQuery({
     queryKey: ["all-places-itin"],
-    queryFn: async () => {
-      const res = await fetch(`/api/places?lat=${lat}&lng=${lng}`);
-      return res.json();
-    },
+    queryFn: () => fetchPlacesList(`lat=${lat}&lng=${lng}&limit=50`),
   });
+  const places = placesData?.items;
 
   const placeMap: Map<string, string> = new Map(
     (places || []).map((p: { id: string; name: string }) => [p.id, p.name] as [string, string])
@@ -97,6 +100,23 @@ export default function ItineraryPage() {
     qc.invalidateQueries({ queryKey: ["itineraries"] });
     setEditingId(it.id);
     setStops(it.stops || s);
+    pushToast({ message: "Itinerary created", actionLabel: "Edit", actionHref: "/itinerary" });
+  }
+
+  function mergePendingIntoStops() {
+    const base = [...stops];
+    pendingStops.forEach((p) => {
+      if (!base.some((s) => s.placeId === p.placeId)) {
+        base.push({
+          placeId: p.placeId,
+          order: base.length + 1,
+          plannedTime: `${10 + base.length}:00`,
+          transportMode: "WALK",
+        });
+      }
+    });
+    setStops(base.map((s, i) => ({ ...s, order: i + 1 })));
+    clearPendingStops();
   }
 
   async function smartFill() {
@@ -125,14 +145,6 @@ export default function ItineraryPage() {
   function startEdit(it: Itinerary) {
     setEditingId(it.id);
     setStops([...it.stops].sort((a, b) => a.order - b.order));
-  }
-
-  function moveStop(idx: number, dir: -1 | 1) {
-    const next = [...stops];
-    const j = idx + dir;
-    if (j < 0 || j >= next.length) return;
-    [next[idx], next[j]] = [next[j], next[idx]];
-    setStops(next.map((s, i) => ({ ...s, order: i + 1 })));
   }
 
   function calcTotals() {
@@ -170,16 +182,15 @@ export default function ItineraryPage() {
   return (
     <MobileShell title="Itinerary">
       <div className="space-y-3 p-3">
-        {pendingStops.length > 0 && (
-          <p className="rounded bg-yellow-50 p-2 text-sm">
-            {pendingStops.length} place(s) queued — create or edit an itinerary to
-            include them.
-          </p>
-        )}
+        <PendingStopsBanner
+          onSaveToNew={createNew}
+          onSaveToEditing={mergePendingIntoStops}
+          editing={!!editingId}
+        />
         <button
           type="button"
           onClick={createNew}
-          className="w-full rounded bg-blue-600 py-2 text-white"
+          className="w-full rounded-xl bg-red-600 py-2 text-white"
         >
           Create new
         </button>
@@ -213,6 +224,14 @@ export default function ItineraryPage() {
             <p className="text-xs text-gray-500">
               {it.stops.length} stops {it.isPublic ? "· Public" : ""}
             </p>
+            {it.isPublic && (
+              <Link
+                href={`/itinerary/share/${it.id}`}
+                className="mt-1 block text-xs text-red-600"
+              >
+                Share link →
+              </Link>
+            )}
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
@@ -242,48 +261,14 @@ export default function ItineraryPage() {
                 Est. {totals.duration} min · €{totals.cost.toFixed(2)} transport
               </p>
             )}
-            {stops.map((s, idx) => (
-              <div key={s.placeId + idx} className="mb-2 rounded bg-gray-50 p-2">
-                <p className="text-sm font-medium">
-                  {idx + 1}. {placeMap.get(s.placeId) || s.placeId}
-                </p>
-                <input
-                  className="mt-1 w-full rounded border p-1 text-xs"
-                  value={s.plannedTime || ""}
-                  onChange={(e) => {
-                    const n = [...stops];
-                    n[idx] = { ...n[idx], plannedTime: e.target.value };
-                    setStops(n);
-                  }}
-                  placeholder="Time HH:MM"
-                />
-                <select
-                  className="mt-1 w-full rounded border p-1 text-xs"
-                  value={s.transportMode || "WALK"}
-                  onChange={(e) => {
-                    const n = [...stops];
-                    n[idx] = { ...n[idx], transportMode: e.target.value };
-                    setStops(n);
-                  }}
-                >
-                  <option value="WALK">Walk</option>
-                  <option value="BUS">Bus</option>
-                  <option value="TAXI">Taxi</option>
-                  <option value="BIKE">Bike</option>
-                </select>
-                <div className="mt-1 flex gap-2">
-                  <button type="button" className="text-xs" onClick={() => moveStop(idx, -1)}>
-                    ↑
-                  </button>
-                  <button type="button" className="text-xs" onClick={() => moveStop(idx, 1)}>
-                    ↓
-                  </button>
-                </div>
-              </div>
-            ))}
+            <SortableStops
+              stops={stops}
+              placeMap={placeMap}
+              onChange={setStops}
+            />
             <button
               type="button"
-              className="mt-2 w-full rounded bg-blue-600 py-2 text-white"
+              className="mt-2 w-full rounded-xl bg-red-600 py-2 text-white"
               onClick={() =>
                 saveMutation.mutate({
                   id: editingId,

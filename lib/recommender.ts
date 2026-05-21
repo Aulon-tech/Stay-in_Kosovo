@@ -67,6 +67,15 @@ function ruleBasedScore(
   const ratingScore = (place.avgRating || 0) / 5;
   const todScore = timeOfDayFit(place.category, now.getHours());
 
+  let weatherBoost = 0;
+  const w = (input.weather || "clear").toLowerCase();
+  if (w === "rain" && ["CAFE", "FOOD", "CULTURE", "SHOPPING"].includes(place.category)) {
+    weatherBoost = 0.08;
+  }
+  if (w === "clear" && ["NATURE", "CULTURE"].includes(place.category)) {
+    weatherBoost = 0.05;
+  }
+
   let interestBoost = 0;
   if (prefs.interests?.length) {
     const catMap: Record<string, string> = {
@@ -87,7 +96,8 @@ function ruleBasedScore(
     openScore * 0.15 +
     ratingScore * 0.1 +
     todScore * 0.1 +
-    interestBoost;
+    interestBoost +
+    weatherBoost;
 
   const reasons: string[] = [];
   if (vibeOverlap.length)

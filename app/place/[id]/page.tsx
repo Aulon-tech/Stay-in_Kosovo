@@ -10,6 +10,9 @@ import { useSession } from "next-auth/react";
 import { useGeolocation } from "@/components/geo/useGeolocation";
 import { useAppStore } from "@/lib/store";
 import { VIBES } from "@/lib/utils";
+import { DirectionLinks } from "@/components/directions/DirectionLinks";
+import { useToastStore } from "@/lib/toast-store";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 
 const MiniMap = dynamic(
   () => import("@/components/map/MiniPlaceMap"),
@@ -22,6 +25,8 @@ export default function PlaceDetailPage() {
   const { lat, lng, addPendingStop } = useAppStore();
   const { data: session } = useSession();
   const qc = useQueryClient();
+  const pushToast = useToastStore((s) => s.push);
+  const { t } = useTranslation();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [vibeTags, setVibeTags] = useState<string[]>([]);
@@ -129,15 +134,18 @@ export default function PlaceDetailPage() {
           <MiniMap lat={place.lat} lng={place.lng} name={place.name} />
         </div>
 
-        <h2 className="mt-4 font-semibold">How to get here</h2>
-        <div className="mt-2 space-y-1">
+        <h2 className="mt-4 font-semibold">{t("directions")}</h2>
+        <div className="mt-2 mb-3">
+          <DirectionLinks lat={place.lat} lng={place.lng} name={place.name} />
+        </div>
+        <div className="space-y-1">
           {transport?.map(
-            (t: { mode: string; label: string }) => (
+            (tr: { mode: string; label: string }) => (
               <div
-                key={t.mode}
+                key={tr.mode}
                 className="rounded border bg-white px-3 py-2 text-sm"
               >
-                {t.label}
+                {tr.label}
               </div>
             )
           )}
@@ -146,10 +154,14 @@ export default function PlaceDetailPage() {
         {session ? (
           <button
             type="button"
-            className="mt-4 w-full rounded bg-blue-600 py-2 text-white"
+            className="mt-4 w-full rounded-xl bg-red-600 py-2 text-white"
             onClick={() => {
               addPendingStop(place.id, place.name);
-              alert("Added — open Plan to save to an itinerary");
+              pushToast({
+                message: `${t("addedItinerary")}: ${place.name}`,
+                actionLabel: t("goToPlan"),
+                actionHref: "/itinerary",
+              });
             }}
           >
             Add to itinerary

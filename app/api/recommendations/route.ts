@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getRecommendations, buildMiniItinerary } from "@/lib/recommender";
 import { parseJson, UserPreferences } from "@/lib/utils";
+import { fetchWeather } from "@/lib/weather";
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -26,6 +27,7 @@ export async function GET(req: NextRequest) {
     prefs.vibes = [vibe, ...prefs.vibes];
   }
 
+  const weather = await fetchWeather(lat, lng);
   const places = await prisma.place.findMany();
   const ranked = await getRecommendations({
     places,
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
     maxDistanceKm: maxDistance,
     openNow,
     limit,
-    weather: "clear",
+    weather: weather.label,
   });
 
   const result = ranked.map((r) => ({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseJson, haversineKm, isOpenNow, OpeningHours } from "@/lib/utils";
-import { generateVibeSummary } from "@/lib/vibe-summary";
+import { Prisma } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -14,21 +14,27 @@ export async function GET(req: NextRequest) {
   const lng = sp.get("lng") ? Number(sp.get("lng")) : null;
   const city = sp.get("city");
   const search = sp.get("search");
+  const page = Math.max(1, Number(sp.get("page") || 1));
+  const limit = Math.min(50, Math.max(1, Number(sp.get("limit") || 20)));
+
+  const where: Prisma.PlaceWhereInput = {};
+  if (category) where.category = category;
+  if (city) where.city = city;
+  if (priceLevel) where.priceLevel = { lte: priceLevel };
+  if (search) {
+    where.OR = [
+      { name: { contains: search } },
+      { description: { contains: search } },
+      { city: { contains: search } },
+    ];
+  }
 
   let places = await prisma.place.findMany({
+    where,
     orderBy: { avgRating: "desc" },
+    take: 200,
   });
 
-  if (category) places = places.filter((p) => p.category === category);
-  if (city) places = places.filter((p) => p.city.toLowerCase() === city.toLowerCase());
-  if (search) {
-    const q = search.toLowerCase();
-    places = places.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q)
-    );
-  }
   if (vibe) {
     places = places.filter((p) =>
       parseJson<string[]>(p.vibes, [])
@@ -36,72 +42,48 @@ export async function GET(req: NextRequest) {
         .includes(vibe.toLowerCase())
     );
   }
-  if (priceLevel) places = places.filter((p) => p.priceLevel <= priceLevel);
   if (openNow) {
     places = places.filter((p) =>
       isOpenNow(parseJson<OpeningHours | null>(p.openingHours, null))
     );
   }
 
-  const enriched = await Promise.all(
-    places.map(async (place) => {
-      const reviews = await prisma.review.findMany({
-        where: { placeId: place.id },
-        take: 10,
-      });
-      const feelsLike = await generateVibeSummary(
-        place.name,
-        parseJson<string[]>(place.vibes, []),
-        reviews
-      );
-      let distanceKm: number | null = null;
-      if (lat != null && lng != null) {
-        distanceKm = haversineKm(lat, lng, place.lat, place.lng);
-        if (maxDistance && distanceKm > maxDistance) return null;
-      }
-      return {
-        ...place,
-        vibes: parseJson(place.vibes, []),
-        images: parseJson(place.images, []),
-        openingHours: parseJson(place.openingHours, null),
-        feelsLike,
-        distanceKm,
-      };
-    })
-  );
+  const withDistance = places.map((place) => {
+    const distanceKm =
+      lat != null && lng != null
+        ? haversineKm(lat, lng, place.lat, place.lng)
+        : null;
+    return { place, distanceKm };
+  });
 
-  const filtered = enriched.filter(Boolean) as NonNullable<(typeof enriched)[0]>[];
+  let filtered = withDistance;
+  if (maxDistance && lat != null && lng != null) {
+    filtered = filtered.filter(
+      (x) => x.distanceKm != null && x.distanceKm <= maxDistance
+    );
+  }
   if (lat != null && lng != null) {
     filtered.sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
   }
 
-  return NextResponse.json(filtered);
-}
+  const total = filtered.length;
+  const start = (page - 1) * limit;
+  const pageItems = filtered.slice(start, start + limit);
 
-export async function POST(req: Request) {
-  const { getServerSession } = await import("next-auth");
-  const { authOptions } = await import("@/lib/auth");
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id || session.user.role !== "BUSINESS") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const body = await req.json();
-  const place = await prisma.place.create({
-    data: {
-      name: body.name,
-      description: body.description,
-      category: body.category,
-      vibes: JSON.stringify(body.vibes || []),
-      lat: body.lat,
-      lng: body.lng,
-      address: body.address,
-      city: body.city,
-      priceLevel: body.priceLevel || 2,
-      openingHours: JSON.stringify(body.openingHours || {}),
-      images: JSON.stringify(body.images || []),
-      ownerId: session.user.id,
-      isVerified: false,
-    },
+  const enriched = pageItems.map(({ place, distanceKm }) => ({
+    ...place,
+    vibes: parseJson(place.vibes, []),
+    images: parseJson(place.images, []),
+    openingHours: parseJson(place.openingHours, null),
+    feelsLike: place.feelsLike || null,
+    distanceKm,
+  }));
+
+  return NextResponse.json({
+    items: enriched,
+    total,
+    page,
+    limit,
+    hasMore: start + limit < total,
   });
-  return NextResponse.json(place);
 }
