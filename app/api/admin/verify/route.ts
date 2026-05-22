@@ -15,9 +15,11 @@ export async function POST(req: Request) {
     where: { id: parsed.data.placeId },
     data: { isVerified: true },
   });
-  await prisma.businessProfile.updateMany({
-    where: { userId: place.ownerId || "" },
-    data: { verified: true },
-  });
+  if (place.ownerId) {
+    await prisma.businessProfile.updateMany({
+      where: { userId: place.ownerId },
+      data: { verified: true, verificationStatus: "verified" },
+    });
+  }
   return NextResponse.json({ ok: true, place });
 }

@@ -6,9 +6,9 @@ import { useTranslation } from "@/lib/hooks/useTranslation";
 
 const links = [
   { href: "/discover", key: "discover" as const, icon: "◎" },
+  { href: "/vibes", key: "vibe" as const, icon: "✦" },
+  { href: "/itinerary", key: "idea" as const, icon: "▣" },
   { href: "/map", key: "map" as const, icon: "⌖" },
-  { href: "/vibes", key: "vibes" as const, icon: "✦" },
-  { href: "/itinerary", key: "plan" as const, icon: "▣" },
   { href: "/profile", key: "profile" as const, icon: "○" },
 ];
 

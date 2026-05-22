@@ -85,12 +85,17 @@ export function formatCategoryLabel(cat: string): string {
   return cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, " ");
 }
 
-/** UI mood cards on /vibes → dataset vibe tag */
+/** UI mood cards on /vibes → dataset vibe tag (for API hint) */
 export const VIBE_MOOD_TO_TAG: Record<string, DatasetVibeTag> = {
-  cozy: "cozy",
+  all_nighter: "lively",
   energetic: "lively",
-  romantic: "romantic",
-  adventurous: "outdoor",
   chill: "chill",
+  cozy: "cozy",
+  foodie: "traditional",
+  adventure: "outdoor",
+  adventurous: "outdoor",
+  romantic: "romantic",
+  culture: "traditional",
   traditional: "traditional",
+  study: "chill",
 };

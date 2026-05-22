@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { onboardSchema } from "@/lib/validations";
+import { upsertBusinessListing } from "@/lib/business/create-profile";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -15,60 +16,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
   const body = parsed.data;
+  const photos = body.photos ?? body.images ?? [];
+  const tags = body.tags ?? body.vibes ?? [];
 
-  const existingProfile = await prisma.businessProfile.findUnique({
-    where: { userId: session.user.id },
-  });
-
-  if (existingProfile) {
-    await prisma.businessProfile.update({
-      where: { userId: session.user.id },
-      data: {
-        businessName: body.businessName,
-        description: body.description,
-        category: body.category,
-        arbkNumber: body.arbkNumber,
-        website: body.website,
-        phone: body.phone,
-      },
-    });
-  } else {
-    await prisma.businessProfile.create({
-      data: {
-        userId: session.user.id,
-        businessName: body.businessName,
-        description: body.description,
-        category: body.category,
-        arbkNumber: body.arbkNumber,
-        website: body.website,
-        phone: body.phone,
-        verified: false,
-      },
-    });
-  }
-
-  await prisma.user.update({
+  const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    data: { role: "BUSINESS" },
   });
 
-  const place = await prisma.place.create({
-    data: {
-      name: body.businessName,
-      description: body.description,
-      category: body.placeCategory || body.category,
-      vibes: JSON.stringify(body.vibes || []),
-      lat: body.lat,
-      lng: body.lng,
-      address: body.address,
-      city: body.city || "Prishtina",
-      priceLevel: body.priceLevel || 2,
-      openingHours: JSON.stringify(body.openingHours || {}),
-      images: JSON.stringify(body.images || []),
-      ownerId: session.user.id,
-      isVerified: false,
-    },
+  const { profile, place } = await upsertBusinessListing(session.user.id, {
+    businessName: body.businessName,
+    description: body.description,
+    category: body.category,
+    address: body.address,
+    city: body.city,
+    contactEmail: body.contactEmail ?? user?.email ?? "",
+    ownerName: body.ownerName ?? user?.name ?? "Owner",
+    lat: body.lat,
+    lng: body.lng,
+    placeCategory: body.placeCategory || body.category,
+    tags,
+    photos,
+    website: body.website,
+    phone: body.phone,
+    openingHours: body.openingHours,
+    priceLevel: body.priceLevel,
+    priceRange: body.priceRange,
+    arbkNumber: body.arbkNumber,
+    services: body.services,
   });
 
-  return NextResponse.json({ place, ok: true });
+  return NextResponse.json({ profile, place, ok: true });
 }

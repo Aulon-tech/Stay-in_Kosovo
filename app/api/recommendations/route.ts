@@ -7,12 +7,19 @@ import { getRecommendations, buildMiniItinerary } from "@/lib/recommender";
 import { haversineKm, parseJson, UserPreferences } from "@/lib/utils";
 import { fetchWeather } from "@/lib/weather";
 import { isPrishtinaAppPlace } from "@/lib/geo";
+import {
+  buildPromptFromVibeMode,
+  filterRecommendationsByVibe,
+  resolveVibeMode,
+  VIBE_MOOD_TO_MODE,
+} from "@/lib/vibe-matching";
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const lat = Number(sp.get("lat") || 42.6629);
   const lng = Number(sp.get("lng") || 21.1655);
   const vibe = sp.get("vibe") || undefined;
+  const mood = sp.get("mood") || undefined;
   const prompt = sp.get("prompt") || undefined;
   const category = sp.get("category") || undefined;
   const maxDistance = sp.get("distance") ? Number(sp.get("distance")) : undefined;
@@ -20,19 +27,32 @@ export async function GET(req: NextRequest) {
   const limit = sp.get("limit") ? Number(sp.get("limit")) : 15;
   const includeItinerary = sp.get("miniItinerary") === "true";
 
-  const userText =
-    prompt?.trim() ||
-    (vibe ? `${vibe} places in Prishtina` : "");
+  const vibeMode = resolveVibeMode(
+    mood || vibe,
+    prompt || undefined
+  );
+  const userText = prompt?.trim()
+    ? prompt.trim()
+    : vibeMode
+      ? buildPromptFromVibeMode(vibeMode)
+      : vibe
+        ? `${vibe} places in Prishtina`
+        : "";
 
   if (userText) {
     try {
-      const picks = await recommendFromPrompt(userText, limit, vibe);
+      const picks = await recommendFromPrompt(
+        userText,
+        limit,
+        mood || vibe,
+        vibeMode
+      );
       const ids = picks.map((p) => p.placeId);
       const places = await prisma.place.findMany({
         where: { id: { in: ids } },
       });
       const byId = new Map(places.map((p) => [p.id, p]));
-      const recommendations = picks
+      let recommendations = picks
         .map((pick) => {
           const place = byId.get(pick.placeId);
           if (!place) return null;
@@ -47,7 +67,21 @@ export async function GET(req: NextRequest) {
             distanceKm: haversineKm(lat, lng, place.lat, place.lng),
           };
         })
-        .filter(Boolean);
+        .filter((r): r is NonNullable<typeof r> => r != null);
+
+      if (vibeMode) {
+        recommendations = filterRecommendationsByVibe(
+          recommendations,
+          (r) => ({
+            name: r.place.name,
+            category: r.place.category,
+            vibes: r.place.vibes,
+            description: r.place.description,
+          }),
+          vibeMode,
+          { limit, userText: prompt || userText }
+        );
+      }
 
       const response: {
         recommendations: typeof recommendations;
@@ -89,20 +123,27 @@ export async function GET(req: NextRequest) {
   const places = allPlaces.filter((p) =>
     isPrishtinaAppPlace(p.city, p.lat, p.lng)
   );
+  const legacyMode =
+    vibeMode ||
+    resolveVibeMode(mood || vibe, prompt) ||
+    (mood && VIBE_MOOD_TO_MODE[mood] ? VIBE_MOOD_TO_MODE[mood] : null);
+
   const ranked = await getRecommendations({
     places,
     preferences: prefs,
     lat,
     lng,
-    vibe: undefined,
+    vibe: mood || vibe,
     category: category as never,
     maxDistanceKm: maxDistance,
     openNow,
-    limit,
+    limit: limit * 2,
     weather: weather.label,
+    vibeMode: legacyMode ?? undefined,
+    userText: prompt,
   });
 
-  const result = ranked.map((r) => ({
+  let result = ranked.map((r) => ({
     place: {
       ...r.place,
       vibes: parseJson(r.place.vibes, []),
@@ -112,6 +153,22 @@ export async function GET(req: NextRequest) {
     why: r.why,
     distanceKm: r.distanceKm,
   }));
+
+  if (legacyMode) {
+    result = filterRecommendationsByVibe(
+      result,
+      (r) => ({
+        name: r.place.name,
+        category: r.place.category,
+        vibes: r.place.vibes,
+        description: r.place.description,
+      }),
+      legacyMode,
+      { limit, userText: prompt || userText }
+    );
+  } else {
+    result = result.slice(0, limit);
+  }
 
   const response: {
     recommendations: typeof result;

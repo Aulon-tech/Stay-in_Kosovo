@@ -20,15 +20,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
     const { email, password, name, role } = parsed.data;
+    const normalizedEmail = email.toLowerCase().trim();
     const existing = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
     });
     if (existing) {
       return NextResponse.json({ error: "Email already registered" }, { status: 400 });
     }
     const user = await prisma.user.create({
       data: {
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         password: await hashPassword(password),
         name: name || null,
         role: role === "BUSINESS" ? "BUSINESS" : "USER",

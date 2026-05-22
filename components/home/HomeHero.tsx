@@ -21,7 +21,7 @@ export function HomeHero() {
           href="/vibes"
           className="rounded-full bg-kg-accent px-4 py-2 text-xs font-semibold text-kg-neutral"
         >
-          {t("vibes")}
+          {t("vibe")}
         </Link>
         <Link
           href="/map"

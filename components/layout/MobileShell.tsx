@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { BottomNav } from "./BottomNav";
+import { HeaderAccountAction } from "./HeaderAccountAction";
 
 export function MobileShell({
   children,
@@ -20,13 +20,7 @@ export function MobileShell({
           <div className="flex items-center justify-between">
             <div className="w-8" aria-hidden />
             <span className="kg-brand">KosovoGo</span>
-            <Link
-              href="/profile"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-kg-gold-soft text-xs font-semibold text-kg-primary"
-              aria-label="Profile"
-            >
-              ◉
-            </Link>
+            <HeaderAccountAction />
           </div>
           {title && (
             <p className="mt-1 text-center text-xs font-medium text-kg-muted">

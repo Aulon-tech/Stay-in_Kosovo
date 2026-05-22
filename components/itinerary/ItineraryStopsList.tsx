@@ -5,8 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  calculateTransportOptions,
-  getTransitLegSubtitle,
+  formatTransportPrice,
+  getLegTransportComparison,
   pickTransportOption,
 } from "@/lib/transport";
 import { formatCategoryLabel } from "@/lib/dataset";
@@ -87,31 +87,76 @@ function TransitLeg({
   to: PlaceInfo;
   mode?: string;
 }) {
-  const leg = calculateTransportOptions(from.lat, from.lng, to.lat, to.lng);
-  const pick = pickTransportOption(from.lat, from.lng, to.lat, to.lng, mode);
-  const isTaxi = pick.mode === "TAXI";
-  const isWalk = pick.mode === "WALK";
-  const subtitle = getTransitLegSubtitle(pick, leg.roadDistanceKm);
+  const cmp = getLegTransportComparison(from.lat, from.lng, to.lat, to.lng);
+  const planned =
+    pickTransportOption(from.lat, from.lng, to.lat, to.lng, mode).mode;
+
+  const rows: {
+    key: "WALK" | "BUS" | "TAXI";
+    icon: string;
+    option: typeof cmp.walk;
+    badgeClass: string;
+    hint?: string;
+  }[] = [
+    {
+      key: "WALK",
+      icon: "🚶",
+      option: cmp.walk,
+      badgeClass: "mobility-badge-walk",
+      hint: cmp.walkTooFar ? "long walk" : undefined,
+    },
+    {
+      key: "BUS",
+      icon: "🚌",
+      option: cmp.bus,
+      badgeClass: "mobility-badge-bus",
+    },
+    {
+      key: "TAXI",
+      icon: "🚕",
+      option: cmp.taxi,
+      badgeClass: "mobility-badge-taxi",
+    },
+  ];
 
   return (
-    <div className="relative mb-3 ml-14 flex flex-wrap items-center gap-2 py-1">
-      <span
-        className={
-          isTaxi
-            ? "mobility-badge-taxi"
-            : isWalk
-              ? "mobility-badge-walk"
-              : "mobility-badge-bus"
-        }
-      >
-        {isWalk && <span aria-hidden>🚶 </span>}
-        {isTaxi && <span aria-hidden>🚕 </span>}
-        {!isWalk && !isTaxi && <span aria-hidden>🚌 </span>}
-        {isTaxi
-          ? `€${pick.cost.toFixed(0)} · ${pick.durationMin} min`
-          : `${pick.durationMin} min`}
-      </span>
-      <span className="text-xs text-kg-muted">{subtitle}</span>
+    <div className="relative mb-3 ml-14 py-1">
+      <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-kg-muted">
+        ~{cmp.roadDistanceKm.toFixed(2)} km between stops
+      </p>
+      <div className="flex flex-col gap-1.5">
+        {rows.map(({ key, icon, option, badgeClass, hint }) => {
+          const isPlanned = planned === key;
+          return (
+            <div
+              key={key}
+              className={`flex flex-wrap items-center gap-2 rounded-kg px-1 py-0.5 ${
+                isPlanned ? "bg-kg-surface ring-1 ring-kg-primary/25" : ""
+              }`}
+            >
+              <span
+                className={`${badgeClass} ${isPlanned ? "ring-2 ring-kg-primary/40" : ""}`}
+              >
+                <span aria-hidden>{icon} </span>
+                {option.durationMin} min · {formatTransportPrice(key, option.cost)}
+              </span>
+              <span className="text-xs text-kg-muted">
+                {key === "WALK" && (
+                  <>
+                    {hint ? `${hint} · ` : ""}
+                    walking
+                  </>
+                )}
+                {key === "BUS" && "local bus (single ticket)"}
+                {key === "TAXI" && "taxi estimate"}
+                {isPlanned && (
+                  <span className="ml-1 font-medium text-kg-primary">· in your plan</span>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

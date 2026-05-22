@@ -1,5 +1,11 @@
 import { geminiJsonCompletion } from "@/lib/ai/gemini-client";
 import { parsedIntentSchema, type ParsedIntent } from "@/lib/ai/types";
+import {
+  detectVibeFromText,
+  enrichIntentWithVibeMode,
+  resolveVibeMode,
+  VIBE_MOOD_TO_MODE,
+} from "@/lib/vibe-matching";
 
 const INTENT_SYSTEM = `You parse day-planning requests for Prishtina only.
 The user writes in Albanian, English, or a mix. Extract structured intent only.
@@ -45,22 +51,36 @@ function ruleBasedIntent(userText: string, vibeHint?: string): ParsedIntent {
   }
   if (vibeHint) vibes.push(vibeHint.toLowerCase());
 
+  const detectedMode =
+    detectVibeFromText(userText) ||
+    (vibeHint ? VIBE_MOOD_TO_MODE[vibeHint.toLowerCase()] : null);
+
   if (
-    /nightlife|night|club|bar|party|sahat|natë|nate|klub|jetë natën/i.test(t)
+    detectedMode === "all_nighter" ||
+    /nightlife|night|club|bar|party|all nighter|sahat|natë|nate|klub|jetë natën/i.test(
+      t
+    )
   ) {
     categories.push("bar", "nightlife");
     vibes.push("lively", "late-night");
   }
-  if (/restaurant|dinner|lunch|food|darkë|darke|ngrenë|ngrene|traditional/i.test(t)) {
+  if (
+    detectedMode === "foodie" ||
+    (!detectedMode &&
+      /restaurant|dinner|lunch|food|darkë|darke|ngrenë|ngrene|foodie|hungry/i.test(t))
+  ) {
     categories.push("restaurant");
   }
-  if (/cafe|coffee|kafe|kafeje/i.test(t)) {
+  if (/cafe|coffee|kafe|kafeje/i.test(t) && detectedMode !== "all_nighter") {
     categories.push("cafe");
   }
-  if (/museum|gallery|culture|kultur|historic|monument/i.test(t)) {
+  if (
+    detectedMode === "culture" ||
+    /museum|gallery|culture|kultur|historic|monument/i.test(t)
+  ) {
     categories.push("culture", "attraction");
   }
-  if (/nature|park|trail|germia/i.test(t)) {
+  if (detectedMode === "adventure" || /nature|park|trail|germia|hiking/i.test(t)) {
     categories.push("nature");
   }
 
@@ -73,7 +93,7 @@ function ruleBasedIntent(userText: string, vibeHint?: string): ParsedIntent {
   if (/morning|mëngjes|mengjes|breakfast/i.test(t)) time_of_day.push("morning");
   if (/afternoon|pasdite/i.test(t)) time_of_day.push("afternoon");
   if (/evening|mbrëmje|mbrema|dinner/i.test(t)) time_of_day.push("evening");
-  if (/night|natë|nate/i.test(t)) time_of_day.push("night");
+  if (/night|natë|nate|all nighter|party/i.test(t)) time_of_day.push("night");
 
   if (
     /romantic|date night|intimate|couple|anniversary/i.test(t) ||
@@ -93,7 +113,7 @@ function ruleBasedIntent(userText: string, vibeHint?: string): ParsedIntent {
   else if (/half day/i.test(t)) duration_minutes = 240;
   else if (/\b2\s*h|\b2h/i.test(t)) duration_minutes = 120;
 
-  return parsedIntentSchema.parse({
+  let intent = parsedIntentSchema.parse({
     vibes: Array.from(new Set(vibes)),
     categories: Array.from(new Set(categories)),
     budget,
@@ -103,6 +123,10 @@ function ruleBasedIntent(userText: string, vibeHint?: string): ParsedIntent {
     language: /[ëç]/i.test(userText) ? "sq" : "en",
     summary_en: userText.slice(0, 120),
   });
+
+  const mode = resolveVibeMode(vibeHint, userText) || detectedMode;
+  if (mode) intent = enrichIntentWithVibeMode(intent, mode);
+  return intent;
 }
 
 export async function parseUserIntent(
@@ -128,19 +152,23 @@ export async function parseUserIntent(
     );
     const parsed = parsedIntentSchema.safeParse(raw);
     if (parsed.success) {
-      const intent = parsed.data;
+      let intent = parsed.data;
       if (!intent.duration_minutes && options?.windowMinutes) {
         intent.duration_minutes = options.windowMinutes;
       }
+      const mode = resolveVibeMode(options?.vibeHint, text);
+      if (mode) intent = enrichIntentWithVibeMode(intent, mode);
       return intent;
     }
   } catch {
     /* fallback */
   }
 
-  const fallback = ruleBasedIntent(text, options?.vibeHint);
+  let fallback = ruleBasedIntent(text, options?.vibeHint);
   if (!fallback.duration_minutes && options?.windowMinutes) {
     fallback.duration_minutes = options.windowMinutes;
   }
+  const mode = resolveVibeMode(options?.vibeHint, text);
+  if (mode) fallback = enrichIntentWithVibeMode(fallback, mode);
   return fallback;
 }

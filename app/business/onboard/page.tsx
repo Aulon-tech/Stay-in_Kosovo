@@ -55,8 +55,8 @@ export default function BusinessOnboardPage() {
   if (!session) {
     return (
       <div className="kg-shell p-6 text-center">
-        <p className="kg-brand mb-4 block">KosovoGo</p>
-        <Link href="/login" className="text-kg-primary underline">
+        <p className="kg-brand mb-4 block">SHOQ1</p>
+        <Link href="/login?type=business" className="text-kg-primary underline">
           Sign in as a business
         </Link>
       </div>
@@ -69,7 +69,7 @@ export default function BusinessOnboardPage() {
         <Link href="/profile" className="text-kg-muted" aria-label="Close">
           ✕
         </Link>
-        <span className="kg-brand">KosovoGo</span>
+        <span className="kg-brand">SHOQ1</span>
         <div className="w-6" />
       </header>
 

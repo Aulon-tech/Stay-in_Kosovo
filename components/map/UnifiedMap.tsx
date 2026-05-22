@@ -5,7 +5,18 @@ import dynamic from "next/dynamic";
 import { GoogleMapView } from "./GoogleMapView";
 import type { MapPlace, MapEvent } from "./MapView";
 
-const LeafletMap = dynamic(() => import("./MapInner"), { ssr: false });
+const LeafletMap = dynamic(
+  () =>
+    import("@/components/map/LeafletMapClient").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full min-h-[12rem] items-center justify-center bg-kg-surface text-sm text-kg-muted">
+        Loading map…
+      </div>
+    ),
+  }
+);
 
 export function UnifiedMap({
   center,

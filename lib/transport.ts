@@ -59,14 +59,90 @@ const INTERCITY_ROAD_KM = 50;
 const MAX_WALK_KM = 2.5;
 const MAX_WALK_MIN = 45;
 
+/** Prishtina-style urban taxi (€2.50 start + ~€0.90/km). */
 function taxiFareEur(roadKm: number, mountain: boolean): number {
-  const base = mountain ? 3 : 2;
-  const perKm = mountain ? 1.1 : 0.85;
-  return Math.round((base + roadKm * perKm) * 100) / 100;
+  const base = mountain ? 3.5 : 2.5;
+  const perKm = mountain ? 1.15 : 0.9;
+  const fare = base + roadKm * perKm;
+  return Math.round(Math.max(base, fare) * 100) / 100;
 }
 
-function busFareEur(): number {
-  return 0.5;
+/** Local bus ~€0.40–0.80; longer / inter-city legs cost more. */
+function busFareEur(
+  roadKm: number,
+  interCity: boolean,
+  mountain: boolean
+): number {
+  if (interCity && !mountain) {
+    return Math.max(4, Math.round(roadKm * 0.12 * 100) / 100);
+  }
+  if (mountain) return 0.8;
+  if (roadKm <= 2) return 0.4;
+  if (roadKm <= 6) return 0.5;
+  return 0.8;
+}
+
+export function formatTransportPrice(mode: TransportOption["mode"], cost: number): string {
+  if (mode === "WALK") return "Free";
+  return `~€${cost.toFixed(2)}`;
+}
+
+/** Walk / bus / taxi estimates for one leg (for itinerary UI). */
+export function getLegTransportComparison(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number
+): {
+  roadDistanceKm: number;
+  walk: TransportOption;
+  bus: TransportOption;
+  taxi: TransportOption;
+  walkTooFar: boolean;
+} {
+  const result = calculateTransportOptions(fromLat, fromLng, toLat, toLng);
+  const roadKm = result.roadDistanceKm;
+  const walkTooFar = roadKm > MAX_WALK_KM;
+
+  const bus =
+    result.options.find((o) => o.mode === "BUS") ??
+    ({
+      mode: "BUS",
+      durationMin: 5,
+      distanceKm: result.straightLineKm,
+      roadDistanceKm: roadKm,
+      cost: busFareEur(roadKm, false, false),
+      label: "Bus",
+    } as TransportOption);
+
+  const taxi =
+    result.options.find((o) => o.mode === "TAXI") ??
+    ({
+      mode: "TAXI",
+      durationMin: 5,
+      distanceKm: result.straightLineKm,
+      roadDistanceKm: roadKm,
+      cost: taxiFareEur(roadKm, false),
+      label: "Taxi",
+    } as TransportOption);
+
+  const walkFromCalc = result.options.find((o) => o.mode === "WALK");
+  const walk: TransportOption = walkFromCalc ?? {
+    mode: "WALK",
+    durationMin: Math.max(1, Math.round((roadKm / 4.5) * 60)),
+    distanceKm: result.straightLineKm,
+    roadDistanceKm: roadKm,
+    cost: 0,
+    label: "Walk",
+  };
+
+  return {
+    roadDistanceKm: roadKm,
+    walkTooFar,
+    walk: { ...walk, cost: 0 },
+    bus,
+    taxi,
+  };
 }
 
 export function calculateTransportOptions(
@@ -106,7 +182,9 @@ export function calculateTransportOptions(
         Math.round((roadDistanceKm / speed) * 60)
       );
       let cost = 0;
-      if (mode === "BUS") cost = busFareEur();
+      if (mode === "BUS") {
+        cost = busFareEur(roadDistanceKm, interCity, mountain);
+      }
       if (mode === "TAXI") {
         cost =
           interCity && !mountain
@@ -118,14 +196,7 @@ export function calculateTransportOptions(
       if (mode === "WALK" && durationMin > MAX_WALK_MIN) {
         label = `Walk ~${durationMin} min`;
       } else if (mode === "BUS") {
-        cost =
-          interCity && !mountain
-            ? Math.max(4, Math.round(roadDistanceKm * 0.12 * 100) / 100)
-            : cost;
-        label =
-          interCity && !mountain
-            ? `Bus ~${durationMin} min · ~€${cost.toFixed(2)}`
-            : `Bus ~${durationMin} min · ~€${cost.toFixed(2)}`;
+        label = `Bus ~${durationMin} min · ~€${cost.toFixed(2)}`;
       } else if (mode === "TAXI") {
         label = `Taxi ~${durationMin} min · ~€${cost.toFixed(2)}`;
       } else if (mode === "BIKE") {

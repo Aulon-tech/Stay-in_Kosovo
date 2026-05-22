@@ -12,6 +12,12 @@ import {
   intentWantsDateNight,
   isReligiousOrWorshipPlace,
 } from "@/lib/place-suitability";
+import {
+  getVibeRules,
+  parseVibeModeFromIntent,
+  resolveVibeMode,
+  scorePlaceForVibe,
+} from "@/lib/vibe-matching";
 
 function mergeVibes(row: CuratedPlace): string[] {
   return toCandidate(row).vibes;
@@ -120,11 +126,22 @@ export function selectCandidates(
   const maxCandidates = options?.maxCandidates ?? 50;
 
   const prishtina = allPlaces.filter(isPrishtinaPlace);
+  const vibeMode =
+    parseVibeModeFromIntent(intent) ||
+    resolveVibeMode(intent.vibes[0], intent.summary_en);
   const dateNight = intentWantsDateNight(intent);
+  const vibeCats =
+    vibeMode === "all_nighter"
+      ? ["bar", "nightlife"]
+      : vibeMode
+        ? getVibeRules(vibeMode).intentCategories
+        : [];
   const cats = normalizeCategories(
-    dateNight && intent.categories.length === 0
-      ? ["restaurant", "bar", "cafe", "nightlife"]
-      : intent.categories
+    intent.categories.length > 0
+      ? intent.categories
+      : dateNight
+        ? ["restaurant", "bar", "cafe", "nightlife"]
+        : vibeCats
   );
 
   let pool: CuratedPlace[] = dateNight
@@ -148,7 +165,20 @@ export function selectCandidates(
     .map((p) => ({ p, score: scorePlace(p, intent) }))
     .sort((a, b) => b.score - a.score);
 
-  const top = scored.slice(0, maxCandidates).map((s) => toCandidate(s.p));
+  let top = scored.slice(0, maxCandidates).map((s) => toCandidate(s.p));
+
+  if (vibeMode && getVibeRules(vibeMode).maxRestaurants != null) {
+    const maxR = getVibeRules(vibeMode).maxRestaurants!;
+    let rCount = 0;
+    top = top.filter((c) => {
+      if (c.category !== "restaurant") return true;
+      if (rCount < maxR) {
+        rCount++;
+        return true;
+      }
+      return false;
+    });
+  }
 
   if (top.length < Math.min(5, minPool) && pool.length > top.length) {
     const seen = new Set(top.map((c) => c.place_id));

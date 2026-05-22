@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
-export default function BusinessRedirect({
+/** Legacy route: id may be place id — redirect to public business profile when possible */
+export default function BusinessLegacyRedirect({
   params,
 }: {
   params: { id: string };

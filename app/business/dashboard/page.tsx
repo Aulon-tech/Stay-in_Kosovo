@@ -2,7 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { useTranslation } from "@/lib/hooks/useTranslation";
 import { MobileShell } from "@/components/layout/MobileShell";
 import { BusinessStatCard } from "@/components/business/BusinessStatCard";
 import { AppearancesOverTimeChart } from "@/components/business/AppearancesOverTimeChart";
@@ -16,6 +17,8 @@ type StatsResponse = {
 
 export default function BusinessDashboardPage() {
   const { data: session } = useSession();
+  const { t } = useTranslation();
+  const userId = session?.user?.id;
 
   const { data, isLoading } = useQuery<StatsResponse>({
     queryKey: ["business-stats", session?.user?.id],
@@ -47,10 +50,50 @@ export default function BusinessDashboardPage() {
     );
   }
 
+  if (session.user?.role !== "BUSINESS") {
+    return (
+      <MobileShell>
+        <div className="p-6 text-center text-sm text-kg-muted">
+          <p>This area is for business accounts only.</p>
+          <Link href="/discover" className="btn-primary mt-4 inline-block">
+            Go to Discover
+          </Link>
+        </div>
+      </MobileShell>
+    );
+  }
+
   return (
-    <MobileShell title="Your visibility">
+    <MobileShell title="Business dashboard">
       <div className="space-y-4 p-4 pb-8">
-        <h1 className="kg-page-title">Your visibility</h1>
+        <h1 className="kg-page-title">Business dashboard</h1>
+        <p className="text-sm text-kg-muted">
+          Manage your listing, offers, and how travelers see you.
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          <Link href="/business/edit" className="btn-secondary flex-1 text-center text-sm">
+            Edit profile
+          </Link>
+          {userId && (
+            <Link
+              href={`/business/profile/${userId}`}
+              className="btn-secondary flex-1 text-center text-sm"
+            >
+              Public page
+            </Link>
+          )}
+        </div>
+
+        <div className="kg-card-pad">
+          <h2 className="text-sm font-semibold">Posts & promotions</h2>
+          <p className="mt-1 text-xs text-kg-muted">
+            Create events and offers — coming soon. Your place can still appear in
+            Discover, Vibe, and AI day plans.
+          </p>
+        </div>
+
+        <h2 className="text-sm font-semibold text-kg-neutral">Visibility</h2>
 
         {visibility.isDemoData && (
           <p className="text-xs text-kg-muted">
@@ -102,24 +145,33 @@ export default function BusinessDashboardPage() {
               monthly={visibility.chart.monthly}
             />
 
-            {data?.place && (
+            {data?.place && userId && (
               <div className="flex flex-col gap-2 pt-2">
                 <Link
-                  href={`/place/${data.place.id}`}
+                  href={`/business/profile/${userId}`}
                   className="text-center text-sm font-medium text-kg-primary underline"
                 >
-                  View public listing →
+                  View public business profile →
                 </Link>
                 <Link
-                  href="/business/onboard"
+                  href={`/place/${data.place.id}`}
                   className="text-center text-xs text-kg-muted underline"
                 >
-                  Update listing
+                  View on map (traveler view)
                 </Link>
               </div>
             )}
           </>
         )}
+
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: "/login?type=business" })}
+          className="btn-secondary mt-6 w-full text-kg-primary"
+          aria-label={t("signOut")}
+        >
+          {t("signOut")}
+        </button>
       </div>
     </MobileShell>
   );

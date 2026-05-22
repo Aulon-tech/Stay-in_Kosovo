@@ -55,9 +55,10 @@ model Place {
   createdAt     DateTime @default(now())
   datasetId     Int?     // original SQLite row id
 
-  owner   User?    @relation("PlaceOwner", fields: [ownerId], references: [id])
-  reviews Review[]
-  events  Event[]
+  owner           User?            @relation("PlaceOwner", fields: [ownerId], references: [id])
+  businessProfile BusinessProfile?
+  reviews         Review[]
+  events          Event[]
 }
 
 model Review {
@@ -112,16 +113,35 @@ model TransportRoute {
   cost        Float
 }
 
+// accountType on User: role USER = individual, BUSINESS = business
 model BusinessProfile {
-  id           String  @id @default(cuid())
-  userId       String  @unique
-  businessName String
-  description  String
-  category     String
-  arbkNumber   String?
-  website      String?
-  phone        String?
-  verified     Boolean @default(false)
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  placeId            String?  @unique
+  businessName       String
+  description        String
+  category           String
+  ownerName          String?
+  contactEmail       String?
+  address            String?
+  city               String?  @default("Prishtina")
+  lat                Float?
+  lng                Float?
+  arbkNumber         String?
+  website            String?
+  socialLinks        String?  // JSON { instagram?, facebook?, ... }
+  phone              String?
+  openingHours       String?  // JSON
+  priceRange         String?
+  photos             String   @default("[]")
+  logo               String?
+  services           String   @default("[]")
+  tags               String   @default("[]")
+  verificationStatus String   @default("pending")
+  verified           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place? @relation(fields: [placeId], references: [id], onDelete: SetNull)
 }

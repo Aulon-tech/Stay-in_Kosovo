@@ -33,11 +33,11 @@ export async function buildDayPlan(
   });
 
   const candidates = selectCandidates(curated, intent, {
-    minPool: intent.categories.some((c) =>
-      ["bar", "nightlife"].includes(c)
-    )
-      ? 20
-      : 15,
+    minPool:
+      intent.categories.some((c) => ["bar", "nightlife"].includes(c)) ||
+      intent.vibes.some((v) => ["lively", "late-night", "nightlife"].includes(v))
+        ? 20
+        : 15,
     maxCandidates: 50,
   });
 
@@ -161,7 +161,8 @@ export async function replanDayFromRequest(
 export async function recommendFromPrompt(
   userText: string,
   limit = 12,
-  vibeHint?: string
+  vibeHint?: string,
+  _vibeMode?: import("@/lib/vibe-matching").VibeModeId | null
 ): Promise<
   {
     placeId: string;

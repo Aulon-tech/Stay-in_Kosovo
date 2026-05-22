@@ -11,14 +11,16 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useToastStore } from "@/lib/toast-store";
 import { VIBE_MOOD_TO_TAG } from "@/lib/dataset";
+import { getVibeRules, type VibeModeId } from "@/lib/vibe-matching";
 
 const VIBE_MOODS = [
-  { id: "cozy", label: "Lazy & Cozy", desc: "Warm corners & slow pace", icon: "☕", color: "bg-orange-100" },
-  { id: "energetic", label: "Out All Night", desc: "Bars & late energy", icon: "🌙", color: "bg-indigo-100" },
-  { id: "traditional", label: "Culture & History", desc: "Museums & roots", icon: "🏛️", color: "bg-teal-100" },
-  { id: "adventurous", label: "Nature Escape", desc: "Trails & fresh air", icon: "🌲", color: "bg-green-100" },
+  { id: "all_nighter", label: "Out All Night", desc: "Clubs, bars & party", icon: "🌙", color: "bg-indigo-100" },
+  { id: "chill", label: "Chill", desc: "Calm coffee & walks", icon: "☕", color: "bg-orange-100" },
+  { id: "foodie", label: "Foodie", desc: "Restaurants & local food", icon: "🍽️", color: "bg-red-100" },
+  { id: "adventure", label: "Adventure", desc: "Nature & trails", icon: "🌲", color: "bg-green-100" },
   { id: "romantic", label: "Date Night", desc: "Intimate & romantic", icon: "❤️", color: "bg-pink-100" },
-  { id: "chill", label: "Hidden Gems", desc: "Local favorites", icon: "💎", color: "bg-amber-100" },
+  { id: "culture", label: "Culture", desc: "Museums & heritage", icon: "🏛️", color: "bg-teal-100" },
+  { id: "study", label: "Focus", desc: "Quiet cafés & Wi‑Fi", icon: "💻", color: "bg-slate-100" },
 ];
 
 type VibeRec = {
@@ -62,15 +64,20 @@ export default function VibesPage() {
   const activeMood = VIBE_MOODS.find((m) => m.id === activeVibe);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["vibe-rec", datasetVibe, lat, lng, freeText],
-    enabled: !!datasetVibe,
+    queryKey: ["vibe-rec", activeVibe, datasetVibe, lat, lng, freeText],
+    enabled: !!activeVibe,
     queryFn: async () => {
-      const q = freeText.trim()
-        ? `&prompt=${encodeURIComponent(freeText)}`
-        : "";
-      const res = await fetch(
-        `/api/recommendations?vibe=${datasetVibe}&lat=${lat}&lng=${lng}&miniItinerary=true&limit=20&distance=50${q}`
-      );
+      const q = new URLSearchParams({
+        lat: String(lat),
+        lng: String(lng),
+        miniItinerary: "true",
+        limit: "20",
+        distance: "50",
+        mood: activeVibe || "",
+      });
+      if (datasetVibe) q.set("vibe", datasetVibe);
+      if (freeText.trim()) q.set("prompt", freeText.trim());
+      const res = await fetch(`/api/recommendations?${q.toString()}`);
       if (!res.ok) throw new Error("Failed to load recommendations");
       return res.json();
     },
@@ -162,7 +169,7 @@ export default function VibesPage() {
             {activeMood?.label} in Prishtina
           </h2>
           <p className="kg-subtitle mt-1">
-            Tap a place to view details, or add stops to your plan.
+            {activeVibe && getVibeRules(activeVibe as VibeModeId).intent}
           </p>
 
           {isLoading && (

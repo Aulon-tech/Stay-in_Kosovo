@@ -11,6 +11,12 @@ import {
   isDateNightVibeTag,
   isReligiousOrWorshipPlace,
 } from "@/lib/place-suitability";
+import {
+  getVibeRules,
+  resolveVibeMode,
+  scorePlaceForVibe,
+  type VibeModeId,
+} from "@/lib/vibe-matching";
 
 export type RecommendInput = {
   places: Place[];
@@ -25,6 +31,8 @@ export type RecommendInput = {
   maxDistanceKm?: number;
   openNow?: boolean;
   limit?: number;
+  vibeMode?: VibeModeId;
+  userText?: string;
 };
 
 export type RankedPlace = {
@@ -113,7 +121,7 @@ function ruleBasedScore(
     if (catInterest && prefs.interests.includes(catInterest)) interestBoost = 0.1;
   }
 
-  const score =
+  let score =
     vibeScore * 0.4 +
     proximityScore * 0.25 +
     openScore * 0.15 +
@@ -121,6 +129,22 @@ function ruleBasedScore(
     todScore * 0.1 +
     interestBoost +
     weatherBoost;
+
+  const mode =
+    input.vibeMode || resolveVibeMode(input.vibe, input.userText);
+  if (mode) {
+    score += scorePlaceForVibe(
+      {
+        name: place.name,
+        category: place.category,
+        vibes: placeVibes,
+        description: place.description,
+        openingHours: place.openingHours,
+      },
+      getVibeRules(mode),
+      input.userText
+    );
+  }
 
   const reasons: string[] = [];
   if (vibeOverlap.length)
