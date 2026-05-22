@@ -47,13 +47,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-6">
-      <h1 className="mb-6 text-2xl font-bold">Create account</h1>
+    <div className="kg-shell flex min-h-screen flex-col justify-center p-6">
+      <h1 className="kg-brand mb-2 text-center text-2xl">KosovoGo</h1>
+      <p className="kg-subtitle mb-6 text-center">Create account</p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
           placeholder="Name"
-          className="w-full rounded border border-gray-300 p-3"
+          className="input-kg !rounded-kg"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -61,7 +62,7 @@ export default function RegisterPage() {
           type="email"
           placeholder="Email"
           required
-          className="w-full rounded border border-gray-300 p-3"
+          className="input-kg !rounded-kg"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -70,7 +71,7 @@ export default function RegisterPage() {
           placeholder="Password"
           required
           minLength={6}
-          className="w-full rounded border border-gray-300 p-3"
+          className="input-kg !rounded-kg"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -92,17 +93,13 @@ export default function RegisterPage() {
             Business
           </label>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-blue-600 py-3 text-white"
-        >
+        {error && <p className="text-sm text-kg-primary">{error}</p>}
+        <button type="submit" disabled={loading} className="btn-primary">
           {loading ? "Creating…" : "Register"}
         </button>
       </form>
       <p className="mt-4 text-center text-sm">
-        <Link href="/login" className="text-blue-600">
+        <Link href="/login" className="text-kg-primary font-medium">
           Sign in
         </Link>
       </p>

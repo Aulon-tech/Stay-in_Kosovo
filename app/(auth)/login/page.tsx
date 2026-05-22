@@ -37,7 +37,7 @@ function LoginForm() {
         <input
           type="email"
           placeholder="Email"
-          className="w-full rounded border border-gray-300 p-3"
+          className="input-kg !rounded-kg"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -45,23 +45,19 @@ function LoginForm() {
         <input
           type="password"
           placeholder="Password"
-          className="w-full rounded border border-gray-300 p-3"
+          className="input-kg !rounded-kg"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-blue-600 py-3 text-white disabled:opacity-50"
-        >
+        {error && <p className="text-sm text-kg-primary">{error}</p>}
+        <button type="submit" disabled={loading} className="btn-primary disabled:opacity-50">
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-gray-600">
         No account?{" "}
-        <Link href="/register" className="text-blue-600">
+        <Link href="/register" className="text-kg-primary font-medium">
           Register
         </Link>
       </p>
@@ -74,8 +70,9 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-6">
-      <h1 className="mb-6 text-2xl font-bold">Stay in Kosovo</h1>
+    <div className="kg-shell flex min-h-screen flex-col justify-center p-6">
+      <h1 className="kg-brand mb-2 text-center text-2xl">KosovoGo</h1>
+      <p className="kg-subtitle mb-6 text-center">Sign in to plan your day</p>
       <Suspense fallback={<p className="text-sm text-gray-500">Loading…</p>}>
         <LoginForm />
       </Suspense>

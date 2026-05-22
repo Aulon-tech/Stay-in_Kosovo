@@ -7,8 +7,9 @@
 # testing
 /coverage
 
-# next.js
+# next.js (distDir: node_modules/.cache/next-dist — see next.config.mjs)
 /.next/
+/node_modules/.cache/next-dist/
 /out/
 
 # production

@@ -19,7 +19,7 @@ export function DirectionLinks({
         href={googleMapsDirectionsUrl(lat, lng, name)}
         target="_blank"
         rel="noopener noreferrer"
-        className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white"
+        className="btn-teal"
         aria-label={t("googleMaps")}
       >
         {t("googleMaps")}
@@ -28,7 +28,7 @@ export function DirectionLinks({
         href={wazeDirectionsUrl(lat, lng)}
         target="_blank"
         rel="noopener noreferrer"
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+        className="btn-secondary !w-auto px-4 py-2"
         aria-label={t("waze")}
       >
         {t("waze")}

@@ -38,6 +38,7 @@ export default withAuth(
         if (
           path.startsWith("/api/places") ||
           path.startsWith("/api/recommendations") ||
+          path.startsWith("/api/ai/") ||
           path.startsWith("/api/events") ||
           path.startsWith("/api/transport") ||
           path.startsWith("/api/itinerary/share")

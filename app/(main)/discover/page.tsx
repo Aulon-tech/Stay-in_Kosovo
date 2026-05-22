@@ -92,10 +92,10 @@ export default function DiscoverPage() {
       <DiscoverSearch value={search} onChange={(v) => setSearch(v)} />
       <TodayEvents />
       <div className="p-3">
-        <div className="mb-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="mb-2 text-sm font-medium">{t("vibePrompt")}</p>
+        <div className="kg-card-pad mb-3">
+          <p className="mb-2 text-sm font-semibold text-kg-primary">{t("vibePrompt")}</p>
           <input
-            className="mb-2 w-full rounded-xl border border-gray-200 p-2 text-sm focus:border-red-500 focus:outline-none"
+            className="input-kg mb-2 !rounded-kg"
             placeholder="e.g. cozy evening coffee..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -105,14 +105,14 @@ export default function DiscoverPage() {
             type="button"
             onClick={askVibe}
             disabled={smartLoading}
-            className="w-full rounded-xl bg-red-600 py-2 text-sm text-white disabled:opacity-50"
+            className="btn-primary disabled:opacity-50"
           >
             {smartLoading ? t("thinking") : t("getRecs")}
           </button>
           {smartResults && (
             <button
               type="button"
-              className="mt-2 w-full text-xs text-gray-500"
+              className="mt-2 w-full text-xs text-kg-muted underline"
               onClick={() => setSmartResults(null)}
             >
               {t("clearAll")}
@@ -120,7 +120,7 @@ export default function DiscoverPage() {
           )}
         </div>
         {geoLoading && (
-          <p className="mb-2 text-xs text-gray-500">{t("gettingLocation")}</p>
+          <p className="mb-2 text-xs text-kg-muted">{t("gettingLocation")}</p>
         )}
       </div>
       <DiscoverFilters />
@@ -128,9 +128,9 @@ export default function DiscoverPage() {
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => <PlaceCardSkeleton key={i} />)}
         {error && (
-          <div className="rounded-xl bg-red-50 p-4 text-center text-sm text-red-700">
+          <div className="rounded-kg border border-kg-primary/20 bg-kg-teal-soft p-4 text-center text-sm text-kg-primary">
             <p>Could not load places.</p>
-            <button type="button" className="mt-2 underline" onClick={() => refetch()}>
+            <button type="button" className="mt-2 font-medium underline" onClick={() => refetch()}>
               Retry
             </button>
           </div>
@@ -143,15 +143,15 @@ export default function DiscoverPage() {
           />
         ))}
         {!isLoading && !smartResults && list?.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-            <p className="text-sm font-medium text-gray-700">{t("noPlaces")}</p>
-            <p className="mt-1 text-xs text-gray-500">{t("tryOtherFilters")}</p>
+          <div className="rounded-kg border border-dashed border-kg-border bg-white p-8 text-center">
+            <p className="text-sm font-medium text-kg-neutral">{t("noPlaces")}</p>
+            <p className="mt-1 text-xs text-kg-muted">{t("tryOtherFilters")}</p>
           </div>
         )}
         {!smartResults && hasNextPage && (
           <button
             type="button"
-            className="w-full rounded-xl border border-gray-300 py-2 text-sm disabled:opacity-50"
+            className="btn-secondary disabled:opacity-50"
             disabled={isFetchingNextPage}
             onClick={() => fetchNextPage()}
           >

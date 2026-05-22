@@ -14,6 +14,8 @@ export function UnifiedMap({
   onSelectPlace,
   onMapClick,
   heightClass = "h-80",
+  selectedPlaceId,
+  routePath,
 }: {
   center: [number, number];
   places: MapPlace[];
@@ -21,6 +23,8 @@ export function UnifiedMap({
   onSelectPlace: (p: MapPlace) => void;
   onMapClick?: (lat: number, lng: number) => void;
   heightClass?: string;
+  selectedPlaceId?: string | null;
+  routePath?: [number, number][] | null;
 }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [mounted, setMounted] = useState(false);
@@ -28,7 +32,9 @@ export function UnifiedMap({
 
   if (!mounted) {
     return (
-      <div className={`flex ${heightClass} items-center justify-center bg-gray-100`}>
+      <div
+        className={`flex items-center justify-center bg-kg-surface ${heightClass}`}
+      >
         Loading map…
       </div>
     );
@@ -44,19 +50,23 @@ export function UnifiedMap({
           events={events}
           onSelectPlace={onSelectPlace}
           onMapClick={onMapClick}
+          selectedPlaceId={selectedPlaceId}
+          routePath={routePath}
         />
       </div>
     );
   }
 
   return (
-    <div className={heightClass}>
+    <div className={`${heightClass} [&_.leaflet-container]:h-full`}>
       <LeafletMap
         center={center}
         places={places}
         events={events}
         onSelectPlace={onSelectPlace}
         onMapClick={onMapClick}
+        selectedPlaceId={selectedPlaceId}
+        routePath={routePath}
       />
     </div>
   );

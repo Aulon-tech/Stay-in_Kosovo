@@ -23,7 +23,16 @@ export type TransportResult = {
   roadDistanceKm: number;
   roadFactor: number;
   isEstimate: boolean;
+  /** Set when walking is not realistic for this leg */
+  walkNotRecommended?: string;
 };
+
+/** Options that can actually be used for a leg (excludes "too far to walk" placeholders). */
+export function viableTransportOptions(
+  options: TransportOption[]
+): TransportOption[] {
+  return options.filter((o) => o.durationMin > 0);
+}
 
 const SPEEDS_URBAN_KMH: Record<TransportOption["mode"], number> = {
   WALK: 4.5,
@@ -135,16 +144,10 @@ export function calculateTransportOptions(
       };
     });
 
-  if (roadDistanceKm > MAX_WALK_KM) {
-    options.unshift({
-      mode: "WALK",
-      durationMin: 0,
-      distanceKm: straightLineKm,
-      roadDistanceKm,
-      cost: 0,
-      label: `Too far to walk (~${roadDistanceKm} km by road)`,
-    });
-  }
+  const walkNotRecommended =
+    roadDistanceKm > MAX_WALK_KM
+      ? `Too far to walk (~${roadDistanceKm} km by road)`
+      : undefined;
 
   const recommended =
     roadDistanceKm <= 1.2
@@ -165,5 +168,72 @@ export function calculateTransportOptions(
     roadDistanceKm,
     roadFactor,
     isEstimate: true,
+    walkNotRecommended,
   };
+}
+
+/** Pick a real transport option; never returns 0-min walk placeholders. */
+export function pickTransportOption(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number,
+  preferredMode?: string | null
+): TransportOption {
+  const result = calculateTransportOptions(fromLat, fromLng, toLat, toLng);
+  const viable = viableTransportOptions(result.options);
+  if (!viable.length) {
+    return {
+      mode: "TAXI",
+      durationMin: Math.max(5, Math.round(result.roadDistanceKm * 3)),
+      distanceKm: result.straightLineKm,
+      roadDistanceKm: result.roadDistanceKm,
+      cost: taxiFareEur(result.roadDistanceKm, false),
+      label: "Taxi",
+      recommended: true,
+    };
+  }
+
+  const want = preferredMode?.toUpperCase() as TransportOption["mode"] | undefined;
+  if (want) {
+    const match = viable.find((o) => o.mode === want);
+    if (match) return match;
+  }
+
+  return (
+    viable.find((o) => o.recommended) ||
+    viable.find((o) => o.mode === "TAXI") ||
+    viable.find((o) => o.mode === "BUS") ||
+    viable[0]
+  );
+}
+
+export function inferLegTransportMode(
+  fromLat: number,
+  fromLng: number,
+  toLat: number,
+  toLng: number
+): TransportOption["mode"] {
+  return pickTransportOption(fromLat, fromLng, toLat, toLng).mode;
+}
+
+export function getTransitLegSubtitle(
+  pick: TransportOption,
+  roadDistanceKm: number
+): string {
+  if (pick.mode === "WALK") {
+    if (roadDistanceKm <= 0.8) return "Short stroll nearby";
+    if (roadDistanceKm <= 1.5) return "Scenic stroll through the center";
+    return `Walk ~${pick.durationMin} min · ~${roadDistanceKm} km`;
+  }
+  if (pick.mode === "TAXI") {
+    return `~${roadDistanceKm} km · taxi ride`;
+  }
+  if (pick.mode === "BUS") {
+    return `~${roadDistanceKm} km · local bus`;
+  }
+  if (pick.mode === "BIKE") {
+    return `~${roadDistanceKm} km · bike`;
+  }
+  return pick.label;
 }

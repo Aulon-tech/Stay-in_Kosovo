@@ -7,6 +7,10 @@ import {
   timeOfDayFit,
   UserPreferences,
 } from "@/lib/utils";
+import {
+  isDateNightVibeTag,
+  isReligiousOrWorshipPlace,
+} from "@/lib/place-suitability";
 
 export type RecommendInput = {
   places: Place[];
@@ -34,6 +38,17 @@ function ruleBasedScore(
   place: Place,
   input: RecommendInput
 ): { score: number; why: string; distanceKm: number } {
+  if (
+    isDateNightVibeTag(input.vibe) &&
+    isReligiousOrWorshipPlace({
+      name: place.name,
+      description: place.description,
+      id: place.id,
+    })
+  ) {
+    return { score: 0, why: "Not a typical date-night spot", distanceKm: 0 };
+  }
+
   const prefs = input.preferences;
   const placeVibes = parseJson<string[]>(place.vibes, []);
   const hours = place.openingHours;
@@ -128,16 +143,21 @@ export async function getRecommendations(
 ): Promise<RankedPlace[]> {
   let places = [...input.places];
 
+  if (isDateNightVibeTag(input.vibe)) {
+    places = places.filter(
+      (p) =>
+        !isReligiousOrWorshipPlace({
+          name: p.name,
+          description: p.description,
+          id: p.id,
+        })
+    );
+  }
+
   if (input.category) {
     places = places.filter((p) => p.category === input.category);
   }
-  if (input.vibe) {
-    places = places.filter((p) =>
-      parseJson<string[]>(p.vibes, [])
-        .map((v) => v.toLowerCase())
-        .includes(input.vibe!.toLowerCase())
-    );
-  }
+  // Vibe is a soft signal in rule-based path — do not hard-filter (AND) here.
   if (input.openNow) {
     places = places.filter((p) =>
       isOpenNow(p.openingHours)
@@ -164,7 +184,11 @@ export async function getRecommendations(
         messages: [
           {
             role: "system",
-            content: `Rank Kosovo places for a traveler. Return JSON array of {id, score (0-1), why (short)} max ${limit} items.`,
+            content: `Rank Prishtina places for a traveler. Return JSON array of {id, score (0-1), why (short)} max ${limit} items.${
+              isDateNightVibeTag(input.vibe)
+                ? " Romantic/date night: prefer restaurants, bars, cafes — never mosques or churches."
+                : ""
+            }`,
           },
           {
             role: "user",

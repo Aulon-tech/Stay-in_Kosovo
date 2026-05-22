@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { recommendFromPrompt } from "@/lib/ai/day-planner";
 import { getRecommendations, buildMiniItinerary } from "@/lib/recommender";
-import { parseJson, UserPreferences } from "@/lib/utils";
+import { haversineKm, parseJson, UserPreferences } from "@/lib/utils";
 import { fetchWeather } from "@/lib/weather";
+import { isPrishtinaAppPlace } from "@/lib/geo";
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -18,6 +20,61 @@ export async function GET(req: NextRequest) {
   const limit = sp.get("limit") ? Number(sp.get("limit")) : 15;
   const includeItinerary = sp.get("miniItinerary") === "true";
 
+  const userText =
+    prompt?.trim() ||
+    (vibe ? `${vibe} places in Prishtina` : "");
+
+  if (userText) {
+    try {
+      const picks = await recommendFromPrompt(userText, limit, vibe);
+      const ids = picks.map((p) => p.placeId);
+      const places = await prisma.place.findMany({
+        where: { id: { in: ids } },
+      });
+      const byId = new Map(places.map((p) => [p.id, p]));
+      const recommendations = picks
+        .map((pick) => {
+          const place = byId.get(pick.placeId);
+          if (!place) return null;
+          return {
+            place: {
+              ...place,
+              vibes: parseJson(place.vibes, []),
+              images: parseJson(place.images, []),
+            },
+            score: pick.score,
+            why: pick.why,
+            distanceKm: haversineKm(lat, lng, place.lat, place.lng),
+          };
+        })
+        .filter(Boolean);
+
+      const response: {
+        recommendations: typeof recommendations;
+        prompt?: string;
+        miniItinerary?: ReturnType<typeof buildMiniItinerary>;
+      } = { recommendations, prompt: userText };
+
+      if (includeItinerary && recommendations.length > 0) {
+        const top = recommendations
+          .filter((r): r is NonNullable<typeof r> => r != null)
+          .slice(0, 3);
+        const baseHour = new Date().getHours();
+        response.miniItinerary = top.map((r, i) => ({
+          placeId: r.place.id,
+          order: i + 1,
+          plannedTime: `${String(baseHour + i).padStart(2, "0")}:00`,
+          transportMode: "WALK",
+        }));
+      }
+
+      return NextResponse.json(response);
+    } catch (e) {
+      console.error("Gemini recommendations failed", e);
+      /* fall through to legacy */
+    }
+  }
+
   const session = await getServerSession(authOptions);
   const prefs: UserPreferences = session?.user?.preferences || {
     vibes: vibe ? [vibe] : [],
@@ -28,13 +85,16 @@ export async function GET(req: NextRequest) {
   }
 
   const weather = await fetchWeather(lat, lng);
-  const places = await prisma.place.findMany();
+  const allPlaces = await prisma.place.findMany();
+  const places = allPlaces.filter((p) =>
+    isPrishtinaAppPlace(p.city, p.lat, p.lng)
+  );
   const ranked = await getRecommendations({
     places,
     preferences: prefs,
     lat,
     lng,
-    vibe: vibe || (prompt ? undefined : undefined),
+    vibe: undefined,
     category: category as never,
     maxDistanceKm: maxDistance,
     openNow,

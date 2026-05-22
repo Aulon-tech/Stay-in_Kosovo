@@ -15,17 +15,6 @@ export type PlaceCardData = {
   feelsLike?: string | null;
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  restaurant: "bg-orange-100 text-orange-800",
-  cafe: "bg-amber-100 text-amber-800",
-  bar: "bg-purple-100 text-purple-800",
-  nightlife: "bg-pink-100 text-pink-800",
-  culture: "bg-indigo-100 text-indigo-800",
-  nature: "bg-green-100 text-green-800",
-  attraction: "bg-teal-100 text-teal-800",
-  other: "bg-gray-100 text-gray-700",
-};
-
 export function PlaceCard({
   place,
   onAddItinerary,
@@ -37,13 +26,11 @@ export function PlaceCard({
     place.images?.[0] ||
     "https://images.unsplash.com/photo-1501339847302-ac826a4a87f3?w=800";
   const catKey = place.category?.toLowerCase() || "other";
-  const catClass =
-    CATEGORY_COLORS[catKey] || CATEGORY_COLORS.other;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <article className="kg-card">
       <Link href={`/place/${place.id}`} className="block">
-        <div className="relative h-44 w-full bg-gray-100">
+        <div className="relative h-44 w-full bg-kg-surface">
           <Image
             src={img}
             alt={place.name}
@@ -51,14 +38,10 @@ export function PlaceCard({
             className="object-cover"
             unoptimized
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          <span
-            className={`absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-medium ${catClass}`}
-          >
-            {catKey}
-          </span>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+          <span className="tag-teal absolute left-3 top-3">{catKey}</span>
           {place.avgRating > 0 && (
-            <span className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">
+            <span className="absolute right-3 top-3 rounded-full bg-black/55 px-2.5 py-0.5 text-xs font-medium text-white">
               ★ {place.avgRating}
             </span>
           )}
@@ -66,37 +49,30 @@ export function PlaceCard({
             {place.name}
           </h3>
         </div>
-        <div className="p-3">
-          <p className="text-xs text-gray-500">
+        <div className="p-4">
+          <p className="text-xs text-kg-muted">
             {place.distanceKm != null
               ? formatDistance(place.distanceKm)
-              : "Kosovo"}
+              : "Prishtina"}
           </p>
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {place.vibes?.slice(0, 4).map((v) => (
-              <span
-                key={v}
-                className="rounded-full bg-gray-100 px-2 py-0.5 text-xs capitalize text-gray-700"
-              >
+              <span key={v} className="tag-neutral">
                 {v}
               </span>
             ))}
           </div>
           {place.feelsLike && (
-            <p className="mt-2 line-clamp-2 text-xs italic text-gray-600">
+            <p className="mt-2 line-clamp-2 text-xs italic text-kg-muted">
               {place.feelsLike}
             </p>
           )}
         </div>
       </Link>
       {onAddItinerary && (
-        <div className="border-t px-3 pb-3">
-          <button
-            type="button"
-            onClick={onAddItinerary}
-            className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-medium text-white"
-          >
-            + Add to itinerary
+        <div className="border-t border-kg-border px-4 pb-4">
+          <button type="button" onClick={onAddItinerary} className="btn-primary">
+            + Add to my day
           </button>
         </div>
       )}

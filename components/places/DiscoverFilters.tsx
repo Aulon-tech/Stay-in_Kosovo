@@ -1,10 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import { useTranslation } from "@/lib/hooks/useTranslation";
 import { DATASET_CATEGORIES, DATASET_VIBE_TAGS } from "@/lib/dataset";
-
-const DISTANCES = [null, 1, 3, 5, 10] as const;
 
 function Chip({
   active,
@@ -19,11 +16,7 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-        active
-          ? "bg-red-600 text-white"
-          : "bg-white text-gray-700 border border-gray-200"
-      }`}
+      className={`chip shrink-0 ${active ? "chip-active" : "chip-inactive"}`}
     >
       {children}
     </button>
@@ -32,15 +25,11 @@ function Chip({
 
 export function DiscoverFilters() {
   const { filters, setFilters, resetFilters } = useAppStore();
-  const { t } = useTranslation();
 
   return (
-    <div className="space-y-2 border-b border-gray-200 bg-gray-50 px-3 py-3">
-      <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Category">
-        <Chip
-          active={!filters.category}
-          onClick={() => setFilters({ category: "" })}
-        >
+    <div className="space-y-2 border-b border-kg-border bg-white px-3 py-3">
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        <Chip active={!filters.category} onClick={() => setFilters({ category: "" })}>
           All
         </Chip>
         {DATASET_CATEGORIES.map((c) => (
@@ -53,7 +42,7 @@ export function DiscoverFilters() {
           </Chip>
         ))}
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Vibe">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         <Chip active={!filters.vibe} onClick={() => setFilters({ vibe: "" })}>
           All vibes
         </Chip>
@@ -67,26 +56,20 @@ export function DiscoverFilters() {
           </Chip>
         ))}
       </div>
-      <div className="flex gap-2 overflow-x-auto" role="group" aria-label="Distance">
-        {DISTANCES.map((d) => (
-          <Chip
-            key={String(d)}
-            active={filters.distance === d}
-            onClick={() => setFilters({ distance: d })}
-          >
-            {d ? `${d} km` : t("anyDist")}
-          </Chip>
-        ))}
-        <Chip
-          active={filters.openNow}
-          onClick={() => setFilters({ openNow: !filters.openNow })}
-        >
-          {t("openNow")}
-        </Chip>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <label className="flex items-center gap-1 text-kg-muted">
+          <input
+            type="checkbox"
+            checked={filters.openNow}
+            onChange={(e) => setFilters({ openNow: e.target.checked })}
+            className="accent-kg-primary"
+          />
+          Open now
+        </label>
         <button
           type="button"
           onClick={resetFilters}
-          className="shrink-0 text-xs text-gray-500 underline"
+          className="text-kg-primary underline"
         >
           Reset
         </button>

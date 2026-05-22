@@ -1,10 +1,10 @@
 {
-  "name": "Stay in Kosovo",
-  "short_name": "Stay KS",
-  "description": "Discover Kosovo by vibe, plan trips, get around",
+  "name": "KosovoGo",
+  "short_name": "KosovoGo",
+  "description": "AI-powered city experience and itinerary app for Kosovo",
   "start_url": "/discover",
   "display": "standalone",
-  "background_color": "#f3f4f6",
-  "theme_color": "#b91c1c",
+  "background_color": "#F4F6F5",
+  "theme_color": "#0E6E6E",
   "orientation": "portrait"
 }

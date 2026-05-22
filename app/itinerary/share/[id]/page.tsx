@@ -3,11 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useTranslation } from "@/lib/hooks/useTranslation";
 
 export default function ShareItineraryPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["share-itinerary", id],
@@ -20,62 +18,70 @@ export default function ShareItineraryPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-md p-6 text-sm text-gray-500">Loading…</div>
+      <div className="kg-shell p-6 text-sm text-kg-muted">Loading…</div>
     );
   }
   if (error || !data) {
     return (
-      <div className="mx-auto max-w-md p-6">
-        <p className="text-red-600">Itinerary not found or not public.</p>
-        <Link href="/discover" className="text-red-600">
-          {t("discover")}
+      <div className="kg-shell p-6">
+        <p className="text-kg-primary">Itinerary not found or not public.</p>
+        <Link href="/discover" className="text-kg-primary underline">
+          Discover places
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md pb-8">
-      <header className="bg-gradient-to-r from-red-700 to-amber-600 px-4 py-6 text-white">
-        <p className="text-xs uppercase opacity-80">Shared itinerary</p>
-        <h1 className="text-xl font-bold">{data.title}</h1>
+    <div className="kg-shell pb-8">
+      <header className="bg-gradient-to-br from-kg-primary to-kg-primary-dark px-4 py-8 text-white">
+        <p className="text-xs font-medium uppercase tracking-wider text-white/70">
+          KosovoGo
+        </p>
+        <h1 className="mt-2 text-2xl font-bold">{data.title}</h1>
+        <p className="mt-1 text-sm text-white/85">Shared itinerary</p>
       </header>
-      <ol className="space-y-3 p-4">
+      <div className="relative space-y-4 p-4 pl-8">
+        <div className="timeline-line" aria-hidden />
         {data.stops?.map(
           (
             s: {
               order: number;
               plannedTime?: string;
               transportMode?: string;
-              place?: { id: string; name: string; city: string };
+              place?: { name: string; city: string; category: string };
             },
             i: number
           ) => (
-            <li key={i} className="rounded-xl border bg-white p-3">
-              <p className="font-semibold">
-                {s.order}. {s.place?.name || "Stop"}
-              </p>
-              <p className="text-xs text-gray-500">
-                {s.plannedTime} · {s.transportMode} · {s.place?.city}
-              </p>
-              {s.place?.id && (
-                <Link
-                  href={`/place/${s.place.id}`}
-                  className="mt-1 block text-xs text-red-600"
-                >
-                  View place →
-                </Link>
-              )}
-            </li>
+            <div key={i} className="relative">
+              <div className="timeline-dot" aria-hidden />
+              <div className="kg-card ml-2 p-4">
+                {s.plannedTime && (
+                  <span className="tag-teal mb-1 inline-block">{s.plannedTime}</span>
+                )}
+                <p className="font-semibold text-kg-neutral">
+                  {s.place?.name || "Place"}
+                </p>
+                <p className="text-xs text-kg-muted">
+                  {s.place?.category} · {s.place?.city}
+                  {s.transportMode ? ` · ${s.transportMode}` : ""}
+                </p>
+                {s.place && (
+                  <Link
+                    href={`/discover`}
+                    className="mt-2 block text-xs text-kg-primary underline"
+                  >
+                    Explore in KosovoGo
+                  </Link>
+                )}
+              </div>
+            </div>
           )
         )}
-      </ol>
+      </div>
       <div className="px-4">
-        <Link
-          href="/discover"
-          className="block w-full rounded-xl bg-red-600 py-3 text-center text-white"
-        >
-          {t("discover")}
+        <Link href="/discover" className="btn-primary block text-center">
+          Start your own plan
         </Link>
       </div>
     </div>

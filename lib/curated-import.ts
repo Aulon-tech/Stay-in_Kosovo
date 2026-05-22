@@ -56,7 +56,7 @@ function mergeVibes(row: CuratedPlace): string[] {
     const t = String(v).toLowerCase().trim();
     if (t) set.add(t);
   }
-  return [...set];
+  return Array.from(set);
 }
 
 function resolveOpeningHours(row: CuratedPlace): string | null {

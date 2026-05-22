@@ -2,8 +2,144 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+@layer base {
+  body {
+    @apply bg-kg-surface font-sans text-kg-neutral antialiased;
+  }
+}
+
+@layer components {
+  .kg-shell {
+    @apply mx-auto min-h-screen max-w-md bg-kg-surface pb-20;
+  }
+
+  .kg-header {
+    @apply sticky top-0 z-40 border-b border-kg-border bg-white px-4 py-3 shadow-kg-sm;
+  }
+
+  .kg-brand {
+    @apply text-lg font-bold tracking-tight text-kg-primary;
+  }
+
+  .kg-page-title {
+    @apply text-2xl font-bold leading-tight text-kg-primary;
+  }
+
+  .kg-subtitle {
+    @apply text-sm text-kg-muted;
+  }
+
+  .kg-card {
+    @apply overflow-hidden rounded-kg bg-white shadow-kg;
+  }
+
+  .kg-card-pad {
+    @apply rounded-kg border border-kg-border bg-white p-4 shadow-kg-sm;
+  }
+
+  .btn-primary {
+    @apply w-full rounded-full bg-kg-accent py-3.5 text-center text-sm font-semibold text-kg-neutral shadow-kg-sm transition hover:bg-kg-accent-dark disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply w-full rounded-full border border-kg-border bg-white py-3 text-center text-sm font-medium text-kg-neutral transition hover:bg-kg-surface;
+  }
+
+  .btn-teal {
+    @apply rounded-full bg-kg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-kg-primary-dark;
+  }
+
+  .chip {
+    @apply rounded-full px-3 py-1.5 text-sm font-medium transition;
+  }
+
+  .chip-active {
+    @apply bg-kg-primary text-white;
+  }
+
+  .chip-inactive {
+    @apply border border-kg-border bg-white text-kg-neutral hover:border-kg-primary/30;
+  }
+
+  .tag-teal {
+    @apply rounded-full bg-kg-teal-soft px-2.5 py-0.5 text-xs font-medium capitalize text-kg-primary;
+  }
+
+  .tag-neutral {
+    @apply rounded-full bg-kg-surface px-2.5 py-0.5 text-xs font-medium capitalize text-kg-muted;
+  }
+
+  .quote-box {
+    @apply rounded-kg border border-amber-100 bg-kg-cream p-4 text-sm italic leading-relaxed text-kg-neutral;
+  }
+
+  .city-toggle {
+    @apply flex rounded-full bg-kg-surface p-1;
+  }
+
+  .city-toggle-item {
+    @apply flex-1 rounded-full px-4 py-2 text-center text-sm font-medium transition;
+  }
+
+  .city-toggle-active {
+    @apply bg-kg-primary text-white shadow-kg-sm;
+  }
+
+  .city-toggle-inactive {
+    @apply text-kg-muted;
+  }
+
+  .vibe-mood-card {
+    @apply flex flex-col items-center rounded-kg border border-kg-border bg-white p-4 shadow-kg-sm transition active:scale-[0.98];
+  }
+
+  .vibe-mood-card-active {
+    @apply border-kg-primary ring-2 ring-kg-primary/20;
+  }
+
+  .transport-row {
+    @apply flex items-center gap-3 rounded-kg border border-kg-border bg-white px-3 py-3 text-sm;
+  }
+
+  .transport-row-active {
+    @apply border-kg-primary/40 bg-kg-teal-soft;
+  }
+
+  .timeline-line {
+    @apply absolute left-[11px] top-0 bottom-0 w-0.5 bg-kg-border;
+  }
+
+  .timeline-dot {
+    @apply absolute left-1 top-4 h-3 w-3 rounded-full border-2 border-kg-primary bg-white;
+  }
+
+  .timeline-time-marker {
+    @apply absolute -left-14 top-6 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-kg-border bg-white px-0.5 text-center text-[9px] font-semibold leading-tight text-kg-muted shadow-kg-sm;
+  }
+
+  .mobility-badge-walk {
+    @apply inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800;
+  }
+
+  .mobility-badge-taxi {
+    @apply inline-flex items-center rounded-full bg-kg-gold-soft px-2.5 py-1 text-xs font-semibold text-kg-neutral;
+  }
+
+  .mobility-badge-bus {
+    @apply inline-flex items-center rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900;
+  }
+
+  .perfect-day-timeline {
+    @apply px-4 pb-4;
+  }
+
+  .nav-active-pill {
+    @apply rounded-full bg-kg-accent px-3 py-1.5 font-bold text-kg-neutral;
+  }
+
+  .input-kg {
+    @apply w-full rounded-full border border-kg-border bg-white px-4 py-2.5 text-sm shadow-kg-sm focus:border-kg-primary focus:outline-none focus:ring-2 focus:ring-kg-primary/20;
+  }
 }
 
 .leaflet-container {

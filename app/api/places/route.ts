@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { parseJson, haversineKm, isOpenNow } from "@/lib/utils";
 import { normalizeOpeningHours } from "@/lib/opening-hours";
 import { Prisma } from "@prisma/client";
+import { isPrishtinaAppPlace } from "@/lib/geo";
 
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
     orderBy: [{ avgRating: "desc" }, { ratingCount: "desc" }],
     take: 500,
   });
+  places = places.filter((p) => isPrishtinaAppPlace(p.city, p.lat, p.lng));
   if (openNow) {
     places = places.filter((p) =>
       isOpenNow(p.openingHours)

@@ -21,7 +21,7 @@ export function useGeolocation() {
       },
       () => {
         setLocation(PRIZREN_ITP.lat, PRIZREN_ITP.lng);
-        setError("Using default location (ITP Prizren)");
+        setError("Using default map location");
         setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }

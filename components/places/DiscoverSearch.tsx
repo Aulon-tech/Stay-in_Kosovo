@@ -11,14 +11,14 @@ export function DiscoverSearch({
 }) {
   const { t } = useTranslation();
   return (
-    <label className="block px-3 pb-2">
+    <label className="mt-3 block px-3 pb-2">
       <span className="sr-only">{t("searchPlaceholder")}</span>
       <input
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t("searchPlaceholder")}
-        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+        className="input-kg"
         aria-label={t("searchPlaceholder")}
       />
     </label>

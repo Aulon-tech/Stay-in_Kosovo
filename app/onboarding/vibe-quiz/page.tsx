@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 import { DATASET_VIBE_TAGS, DATASET_CATEGORIES } from "@/lib/dataset";
 
 export default function VibeQuizPage() {
@@ -50,58 +51,48 @@ export default function VibeQuizPage() {
 
   if (!session) {
     return (
-      <div className="p-6 text-center">
-        <p>Please sign in first.</p>
-        <a href="/login" className="text-blue-600">
+      <div className="kg-shell p-6 text-center">
+        <p className="kg-brand">KosovoGo</p>
+        <Link href="/login" className="mt-4 text-kg-primary underline">
           Login
-        </a>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md p-6">
-      <h1 className="mb-2 text-xl font-bold">What&apos;s your vibe?</h1>
-      <p className="mb-4 text-sm text-gray-600">Pick 3–5 moods that match you.</p>
-      <div className="mb-6 flex flex-wrap gap-2">
+    <div className="kg-shell p-6">
+      <p className="kg-brand text-center">KosovoGo</p>
+      <h1 className="kg-page-title mt-4">Let{"'"}s shape your day</h1>
+      <p className="kg-subtitle mt-1">Pick 3–5 moods that match you.</p>
+      <div className="mb-6 mt-4 flex flex-wrap gap-2">
         {DATASET_VIBE_TAGS.slice(0, 12).map((v) => (
           <button
             key={v}
             type="button"
             onClick={() => toggleVibe(v)}
-            className={`rounded-full px-3 py-1.5 text-sm capitalize ${
-              selectedVibes.includes(v)
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
-            }`}
+            className={`chip capitalize ${selectedVibes.includes(v) ? "chip-active" : "chip-inactive"}`}
           >
             {v}
           </button>
         ))}
       </div>
-      <h2 className="mb-2 font-semibold">Interests</h2>
+      <h2 className="mb-2 font-semibold text-kg-primary">Interests</h2>
       <div className="mb-6 flex flex-wrap gap-2">
         {DATASET_CATEGORIES.map((i) => (
           <button
             key={i}
             type="button"
             onClick={() => toggleInterest(i)}
-            className={`rounded-full px-3 py-1.5 text-sm capitalize ${
-              interests.includes(i) ? "bg-green-600 text-white" : "bg-gray-200"
-            }`}
+            className={`chip capitalize ${interests.includes(i) ? "chip-active" : "chip-inactive"}`}
           >
             {i}
           </button>
         ))}
       </div>
-      {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
-      <button
-        type="button"
-        onClick={submit}
-        disabled={loading}
-        className="w-full rounded bg-blue-600 py-3 text-white"
-      >
-        {loading ? "Saving…" : "Continue to Discover"}
+      {error && <p className="mb-2 text-sm text-kg-primary">{error}</p>}
+      <button type="button" onClick={submit} disabled={loading} className="btn-primary">
+        {loading ? "Saving…" : "✨ Build my day"}
       </button>
     </div>
   );

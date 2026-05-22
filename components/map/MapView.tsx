@@ -24,27 +24,39 @@ export function MapView({
   places,
   events,
   onSelectPlace,
+  fillHeight,
+  selectedPlaceId,
+  routePath,
 }: {
   places: MapPlace[];
   events: MapEvent[];
   onSelectPlace: (p: MapPlace) => void;
+  fillHeight?: boolean;
+  selectedPlaceId?: string | null;
+  routePath?: [number, number][] | null;
 }) {
-  const { lat, lng, showEvents } = useAppStore();
+  const { lat, lng } = useAppStore();
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+  const mapHeight = fillHeight
+    ? "h-[calc(100dvh-20rem)] min-h-[280px] w-full"
+    : "h-80 w-full";
+
   return (
-    <div>
+    <div className={fillHeight ? "w-full shrink-0" : undefined}>
       {!apiKey && (
-        <p className="bg-amber-50 px-3 py-1 text-xs text-amber-800">
-          Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for Google Maps (using OpenStreetMap
-          fallback).
+        <p className="sr-only" aria-hidden>
+          Using OpenStreetMap fallback
         </p>
       )}
       <UnifiedMap
         center={[lat, lng]}
         places={places}
-        events={showEvents ? events : []}
+        events={events}
         onSelectPlace={onSelectPlace}
+        heightClass={mapHeight}
+        selectedPlaceId={selectedPlaceId}
+        routePath={routePath}
       />
     </div>
   );
