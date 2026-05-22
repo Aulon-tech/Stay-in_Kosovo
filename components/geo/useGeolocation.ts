@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { PRISHTINA } from "@/lib/utils";
+import { PRIZREN_ITP } from "@/lib/utils";
 
 export function useGeolocation() {
   const { setLocation, setLoading, setError } = useAppStore();
@@ -10,7 +10,7 @@ export function useGeolocation() {
   useEffect(() => {
     if (!navigator.geolocation) {
       setError("Geolocation not supported");
-      setLocation(PRISHTINA.lat, PRISHTINA.lng);
+      setLocation(PRIZREN_ITP.lat, PRIZREN_ITP.lng);
       return;
     }
     setLoading(true);
@@ -20,8 +20,8 @@ export function useGeolocation() {
         setLoading(false);
       },
       () => {
-        setLocation(PRISHTINA.lat, PRISHTINA.lng);
-        setError("Using default location (Prishtina)");
+        setLocation(PRIZREN_ITP.lat, PRIZREN_ITP.lng);
+        setError("Using default location (ITP Prizren)");
         setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }

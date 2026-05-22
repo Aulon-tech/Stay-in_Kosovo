@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
+import { DATASET_CATEGORIES, DATASET_VIBE_TAGS } from "@/lib/dataset";
 
 const PickLocationMap = dynamic(
   () => import("@/components/business/PickLocationMap"),
@@ -20,8 +21,8 @@ export default function BusinessOnboardPage() {
   const [form, setForm] = useState({
     businessName: "",
     description: "",
-    category: "FOOD",
-    placeCategory: "FOOD",
+    category: "restaurant",
+    placeCategory: "restaurant",
     vibes: [] as string[],
     lat: 42.6629,
     lng: 21.1655,
@@ -93,17 +94,15 @@ export default function BusinessOnboardPage() {
               update({ placeCategory: e.target.value, category: e.target.value })
             }
           >
-            {["FOOD", "CAFE", "CULTURE", "NIGHTLIFE", "NATURE", "SHOPPING"].map(
-              (c) => (
+            {DATASET_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {c.charAt(0).toUpperCase() + c.slice(1)}
                 </option>
-              )
-            )}
+              ))}
           </select>
           <p className="text-sm">Vibes (pick several)</p>
           <div className="flex flex-wrap gap-2">
-            {["cozy", "energetic", "romantic", "traditional", "trendy", "scenic"].map(
+            {DATASET_VIBE_TAGS.map(
               (v) => (
                 <button
                   key={v}

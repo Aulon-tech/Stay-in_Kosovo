@@ -161,7 +161,7 @@ export default function ItineraryPage() {
           (p: { id: string }) => p.id === sorted[i].placeId
         );
         if (prev && curr) {
-          const opts = calculateTransportOptions(
+          const { options: opts } = calculateTransportOptions(
             prev.lat,
             prev.lng,
             curr.lat,

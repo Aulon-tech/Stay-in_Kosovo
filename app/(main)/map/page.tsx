@@ -47,8 +47,8 @@ export default function MapPage() {
     const res = await fetch(
       `/api/transport?fromLat=${lat}&fromLng=${lng}&toLat=${p.lat}&toLng=${p.lng}`
     );
-    const opts = await res.json();
-    setTransport(opts);
+    const data = await res.json();
+    setTransport(data.options || []);
   }
 
   function handleSelect(p: MapPlace) {

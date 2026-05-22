@@ -1,3 +1,11 @@
+import { DATASET_VIBE_TAGS } from "@/lib/dataset";
+import {
+  normalizeOpeningHours,
+  type OpeningHours,
+} from "@/lib/opening-hours";
+
+export type { OpeningHours };
+
 export function parseJson<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback;
   try {
@@ -35,16 +43,11 @@ export function formatDistance(km: number): string {
 
 export const PRISHTINA = { lat: 42.6629, lng: 21.1655 };
 
-export const VIBES = [
-  "cozy",
-  "energetic",
-  "romantic",
-  "adventurous",
-  "chill",
-  "trendy",
-  "traditional",
-  "scenic",
-] as const;
+/** Innovation & Training Park Prizren (former KFOR camp area) */
+export const PRIZREN_ITP = { lat: 42.227, lng: 20.712 };
+
+/** @deprecated use DATASET_VIBE_TAGS — kept for imports */
+export const VIBES = DATASET_VIBE_TAGS;
 
 export const INTERESTS = [
   "food",
@@ -70,22 +73,18 @@ export type ItineraryStop = {
   transportMode?: string;
 };
 
-export type OpeningHours = Record<
-  string,
-  { open: string; close: string } | null
->;
-
 export function isOpenNow(
-  openingHours: OpeningHours | null,
+  openingHours: OpeningHours | string | Record<string, unknown> | null,
   now = new Date()
 ): boolean {
-  if (!openingHours) return true;
+  const hours = normalizeOpeningHours(openingHours);
+  if (!hours) return true;
   const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   const key = days[now.getDay()];
-  const hours = openingHours[key];
-  if (!hours) return false;
-  const [openH, openM] = hours.open.split(":").map(Number);
-  const [closeH, closeM] = hours.close.split(":").map(Number);
+  const slot = hours[key];
+  if (!slot) return false;
+  const [openH, openM] = slot.open.split(":").map(Number);
+  const [closeH, closeM] = slot.close.split(":").map(Number);
   const mins = now.getHours() * 60 + now.getMinutes();
   const openMins = openH * 60 + openM;
   const closeMins = closeH * 60 + closeM;
@@ -97,7 +96,16 @@ export function timeOfDayFit(
   category: string,
   hour: number
 ): number {
+  const c = category.toLowerCase();
   const map: Record<string, [number, number][]> = {
+    cafe: [[7, 11], [14, 18]],
+    restaurant: [[12, 14], [18, 22]],
+    bar: [[18, 2]],
+    nightlife: [[21, 3]],
+    culture: [[10, 18]],
+    attraction: [[10, 18]],
+    nature: [[8, 19]],
+    other: [[10, 20]],
     CAFE: [[7, 11], [14, 18]],
     FOOD: [[12, 14], [18, 22]],
     NIGHTLIFE: [[21, 3]],
@@ -105,7 +113,7 @@ export function timeOfDayFit(
     NATURE: [[8, 19]],
     SHOPPING: [[10, 20]],
   };
-  const windows = map[category] || [[9, 21]];
+  const windows = map[c] || map[category] || [[9, 21]];
   for (const [start, end] of windows) {
     if (start <= end) {
       if (hour >= start && hour <= end) return 1;

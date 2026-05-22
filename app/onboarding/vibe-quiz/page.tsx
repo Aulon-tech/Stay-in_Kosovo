@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { VIBES, INTERESTS } from "@/lib/utils";
+import { DATASET_VIBE_TAGS, DATASET_CATEGORIES } from "@/lib/dataset";
 
 export default function VibeQuizPage() {
   const { data: session, update } = useSession();
@@ -64,7 +64,7 @@ export default function VibeQuizPage() {
       <h1 className="mb-2 text-xl font-bold">What&apos;s your vibe?</h1>
       <p className="mb-4 text-sm text-gray-600">Pick 3–5 moods that match you.</p>
       <div className="mb-6 flex flex-wrap gap-2">
-        {VIBES.map((v) => (
+        {DATASET_VIBE_TAGS.slice(0, 12).map((v) => (
           <button
             key={v}
             type="button"
@@ -81,7 +81,7 @@ export default function VibeQuizPage() {
       </div>
       <h2 className="mb-2 font-semibold">Interests</h2>
       <div className="mb-6 flex flex-wrap gap-2">
-        {INTERESTS.map((i) => (
+        {DATASET_CATEGORIES.map((i) => (
           <button
             key={i}
             type="button"

@@ -18,7 +18,11 @@ Smart experience and mobility platform for citizens, tourists, and local busines
 npm install
 cp .env.example .env
 npm run db:push
-npm run seed
+
+# Dataset: data/places_curated.json (319 vende Prishtinë)
+npm run import:places
+
+npm run seed          # përdorues demo
 npm run dev
 ```
 

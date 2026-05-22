@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { parseJson, haversineKm, isOpenNow, OpeningHours } from "@/lib/utils";
+import { parseJson, haversineKm, isOpenNow } from "@/lib/utils";
+import { normalizeOpeningHours } from "@/lib/opening-hours";
 import { Prisma } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
@@ -18,8 +19,11 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(50, Math.max(1, Number(sp.get("limit") || 20)));
 
   const where: Prisma.PlaceWhereInput = {};
-  if (category) where.category = category;
+  if (category) where.category = category.toLowerCase();
   if (city) where.city = city;
+  if (vibe) {
+    where.vibes = { contains: `"${vibe.toLowerCase()}"` };
+  }
   if (priceLevel) where.priceLevel = { lte: priceLevel };
   if (search) {
     where.OR = [
@@ -31,20 +35,12 @@ export async function GET(req: NextRequest) {
 
   let places = await prisma.place.findMany({
     where,
-    orderBy: { avgRating: "desc" },
-    take: 200,
+    orderBy: [{ avgRating: "desc" }, { ratingCount: "desc" }],
+    take: 500,
   });
-
-  if (vibe) {
-    places = places.filter((p) =>
-      parseJson<string[]>(p.vibes, [])
-        .map((v) => v.toLowerCase())
-        .includes(vibe.toLowerCase())
-    );
-  }
   if (openNow) {
     places = places.filter((p) =>
-      isOpenNow(parseJson<OpeningHours | null>(p.openingHours, null))
+      isOpenNow(p.openingHours)
     );
   }
 
@@ -73,9 +69,11 @@ export async function GET(req: NextRequest) {
   const enriched = pageItems.map(({ place, distanceKm }) => ({
     ...place,
     vibes: parseJson(place.vibes, []),
+    googleTypes: parseJson(place.googleTypes, []),
     images: parseJson(place.images, []),
-    openingHours: parseJson(place.openingHours, null),
+    openingHours: normalizeOpeningHours(place.openingHours),
     feelsLike: place.feelsLike || null,
+    photoUrl: parseJson<string[]>(place.images, [])[0] || null,
     distanceKm,
   }));
 

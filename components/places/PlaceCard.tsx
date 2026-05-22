@@ -16,12 +16,14 @@ export type PlaceCardData = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  FOOD: "bg-orange-100 text-orange-800",
-  CAFE: "bg-amber-100 text-amber-800",
-  CULTURE: "bg-purple-100 text-purple-800",
-  NIGHTLIFE: "bg-pink-100 text-pink-800",
-  NATURE: "bg-green-100 text-green-800",
-  SHOPPING: "bg-sky-100 text-sky-800",
+  restaurant: "bg-orange-100 text-orange-800",
+  cafe: "bg-amber-100 text-amber-800",
+  bar: "bg-purple-100 text-purple-800",
+  nightlife: "bg-pink-100 text-pink-800",
+  culture: "bg-indigo-100 text-indigo-800",
+  nature: "bg-green-100 text-green-800",
+  attraction: "bg-teal-100 text-teal-800",
+  other: "bg-gray-100 text-gray-700",
 };
 
 export function PlaceCard({
@@ -34,8 +36,9 @@ export function PlaceCard({
   const img =
     place.images?.[0] ||
     "https://images.unsplash.com/photo-1501339847302-ac826a4a87f3?w=800";
+  const catKey = place.category?.toLowerCase() || "other";
   const catClass =
-    CATEGORY_COLORS[place.category] || "bg-gray-100 text-gray-700";
+    CATEGORY_COLORS[catKey] || CATEGORY_COLORS.other;
 
   return (
     <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -52,7 +55,7 @@ export function PlaceCard({
           <span
             className={`absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-medium ${catClass}`}
           >
-            {place.category}
+            {catKey}
           </span>
           {place.avgRating > 0 && (
             <span className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">

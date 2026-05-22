@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { PRISHTINA } from "@/lib/utils";
+import { PRIZREN_ITP } from "@/lib/utils";
 
 type Filters = {
   category: string;
@@ -40,8 +40,8 @@ const defaultFilters: Filters = {
 };
 
 export const useAppStore = create<LocationState>((set) => ({
-  lat: PRISHTINA.lat,
-  lng: PRISHTINA.lng,
+  lat: PRIZREN_ITP.lat,
+  lng: PRIZREN_ITP.lng,
   loading: false,
   error: null,
   filters: { ...defaultFilters },

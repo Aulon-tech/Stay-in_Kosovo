@@ -5,7 +5,6 @@ import {
   isOpenNow,
   parseJson,
   timeOfDayFit,
-  OpeningHours,
   UserPreferences,
 } from "@/lib/utils";
 
@@ -37,7 +36,7 @@ function ruleBasedScore(
 ): { score: number; why: string; distanceKm: number } {
   const prefs = input.preferences;
   const placeVibes = parseJson<string[]>(place.vibes, []);
-  const hours = parseJson<OpeningHours | null>(place.openingHours, null);
+  const hours = place.openingHours;
   const now = input.time || new Date();
   const distanceKm = haversineKm(input.lat, input.lng, place.lat, place.lng);
 
@@ -69,16 +68,25 @@ function ruleBasedScore(
 
   let weatherBoost = 0;
   const w = (input.weather || "clear").toLowerCase();
-  if (w === "rain" && ["CAFE", "FOOD", "CULTURE", "SHOPPING"].includes(place.category)) {
+  const cat = place.category.toLowerCase();
+  if (w === "rain" && ["cafe", "restaurant", "culture", "bar"].includes(cat)) {
     weatherBoost = 0.08;
   }
-  if (w === "clear" && ["NATURE", "CULTURE"].includes(place.category)) {
+  if (w === "clear" && ["nature", "culture", "attraction"].includes(cat)) {
     weatherBoost = 0.05;
   }
 
   let interestBoost = 0;
   if (prefs.interests?.length) {
     const catMap: Record<string, string> = {
+      restaurant: "food",
+      cafe: "coffee",
+      bar: "nightlife",
+      nightlife: "nightlife",
+      culture: "culture",
+      nature: "nature",
+      attraction: "culture",
+      other: "food",
       FOOD: "food",
       CULTURE: "culture",
       NIGHTLIFE: "nightlife",
@@ -132,7 +140,7 @@ export async function getRecommendations(
   }
   if (input.openNow) {
     places = places.filter((p) =>
-      isOpenNow(parseJson<OpeningHours | null>(p.openingHours, null))
+      isOpenNow(p.openingHours)
     );
   }
 
@@ -249,7 +257,9 @@ export async function smartFillItinerary(
 
   for (let i = 0; i < ranked.length && minutesUsed < windowMinutes; i++) {
     const r = ranked[i];
-    const visitMin = r.place.category === "FOOD" ? 75 : r.place.category === "CULTURE" ? 60 : 45;
+    const cat = r.place.category.toLowerCase();
+    const visitMin =
+      cat === "restaurant" ? 75 : ["culture", "attraction"].includes(cat) ? 60 : 45;
     if (minutesUsed + visitMin > windowMinutes) break;
     const t = new Date(start.getTime() + minutesUsed * 60000);
     stops.push({

@@ -28,23 +28,32 @@ model User {
 }
 
 model Place {
-  id           String   @id @default(cuid())
-  name         String
-  description  String
-  category     String
-  vibes        String
-  lat          Float
-  lng          Float
-  address      String
-  city         String
-  priceLevel   Int      @default(2)
-  openingHours String?
-  images       String
-  ownerId      String?
-  avgRating    Float    @default(0)
-  feelsLike    String?
-  isVerified   Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  googlePlaceId String?  @unique
+  curatedSlug   String?  @unique
+  name          String
+  description   String
+  category      String
+  vibes         String   // JSON array of vibe tags
+  googleTypes   String?  // JSON array
+  lat           Float
+  lng           Float
+  address       String
+  city          String   @default("Prishtina")
+  priceLevel    Int      @default(2)
+  priceLevelRaw String?
+  openingHours  String?
+  images        String
+  website       String?
+  phone         String?
+  googleMapsUrl String?
+  ownerId       String?
+  avgRating     Float    @default(0)
+  ratingCount   Int      @default(0)
+  feelsLike     String?
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  datasetId     Int?     // original SQLite row id
 
   owner   User?    @relation("PlaceOwner", fields: [ownerId], references: [id])
   reviews Review[]

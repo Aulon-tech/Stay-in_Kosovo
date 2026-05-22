@@ -2,9 +2,8 @@
 
 import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/lib/hooks/useTranslation";
-import { VIBES } from "@/lib/utils";
+import { DATASET_CATEGORIES, DATASET_VIBE_TAGS } from "@/lib/dataset";
 
-const CATEGORIES = ["", "FOOD", "CULTURE", "NIGHTLIFE", "NATURE", "SHOPPING", "CAFE"];
 const DISTANCES = [null, 1, 3, 5, 10] as const;
 
 function Chip({
@@ -38,13 +37,19 @@ export function DiscoverFilters() {
   return (
     <div className="space-y-2 border-b border-gray-200 bg-gray-50 px-3 py-3">
       <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Category">
-        {CATEGORIES.map((c) => (
+        <Chip
+          active={!filters.category}
+          onClick={() => setFilters({ category: "" })}
+        >
+          All
+        </Chip>
+        {DATASET_CATEGORIES.map((c) => (
           <Chip
-            key={c || "all"}
+            key={c}
             active={filters.category === c}
             onClick={() => setFilters({ category: c })}
           >
-            {c || "All"}
+            {c}
           </Chip>
         ))}
       </div>
@@ -52,7 +57,7 @@ export function DiscoverFilters() {
         <Chip active={!filters.vibe} onClick={() => setFilters({ vibe: "" })}>
           All vibes
         </Chip>
-        {VIBES.map((v) => (
+        {DATASET_VIBE_TAGS.map((v) => (
           <Chip
             key={v}
             active={filters.vibe === v}

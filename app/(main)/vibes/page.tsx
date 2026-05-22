@@ -9,12 +9,13 @@ import { useAppStore } from "@/lib/store";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useToastStore } from "@/lib/toast-store";
+import { VIBE_MOOD_TO_TAG } from "@/lib/dataset";
 
 const VIBE_MOODS = [
   { id: "cozy", label: "Cozy evening", desc: "Warm corners & slow nights" },
-  { id: "energetic", label: "Energetic night", desc: "Dance floors & loud joy" },
+  { id: "energetic", label: "Lively night", desc: "Bars, energy & social buzz" },
   { id: "romantic", label: "Romantic dinner", desc: "Intimate tables & soft light" },
-  { id: "adventurous", label: "Adventurous day", desc: "Trails, views, discovery" },
+  { id: "adventurous", label: "Outdoor day", desc: "Parks, views & fresh air" },
   { id: "chill", label: "Chill afternoon", desc: "Unhurried hours & easy pace" },
   { id: "traditional", label: "Cultural deep-dive", desc: "History, craft, roots" },
 ];
@@ -27,12 +28,14 @@ export default function VibesPage() {
   const pushToast = useToastStore((s) => s.push);
   const [activeVibe, setActiveVibe] = useState<string | null>(null);
 
+  const datasetVibe = activeVibe ? VIBE_MOOD_TO_TAG[activeVibe] || activeVibe : null;
+
   const { data, isLoading } = useQuery({
-    queryKey: ["vibe-rec", activeVibe, lat, lng],
-    enabled: !!activeVibe,
+    queryKey: ["vibe-rec", datasetVibe, lat, lng],
+    enabled: !!datasetVibe,
     queryFn: async () => {
       const res = await fetch(
-        `/api/recommendations?vibe=${activeVibe}&lat=${lat}&lng=${lng}&miniItinerary=true&limit=12`
+        `/api/recommendations?vibe=${datasetVibe}&lat=${lat}&lng=${lng}&miniItinerary=true&limit=12`
       );
       return res.json();
     },

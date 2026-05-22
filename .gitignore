@@ -34,6 +34,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# dataset (large / API keys in photo URLs — keep local)
+data/places_final.db
+data/*.db
+data/json.txt
+data/places_curated*.json
+data/*.json
+!data/README.md
+
 # prisma
 prisma/dev.db
 prisma/dev.db-journal

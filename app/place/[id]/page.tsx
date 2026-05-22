@@ -22,7 +22,7 @@ const MiniMap = dynamic(
 export default function PlaceDetailPage() {
   const { id } = useParams<{ id: string }>();
   useGeolocation();
-  const { lat, lng, addPendingStop } = useAppStore();
+  const { lat, lng, loading: geoLoading, addPendingStop } = useAppStore();
   const { data: session } = useSession();
   const qc = useQueryClient();
   const pushToast = useToastStore((s) => s.push);
@@ -42,13 +42,18 @@ export default function PlaceDetailPage() {
   });
 
   const { data: transport } = useQuery({
-    queryKey: ["transport", id, lat, lng],
-    enabled: !!place,
+    queryKey: ["transport", id, lat, lng, place?.lat, place?.lng],
+    enabled: !!place && !geoLoading,
     queryFn: async () => {
       const res = await fetch(
         `/api/transport?fromLat=${lat}&fromLng=${lng}&toLat=${place.lat}&toLng=${place.lng}`
       );
-      return res.json();
+      if (!res.ok) throw new Error("Transport failed");
+      return res.json() as Promise<{
+        options: { mode: string; label: string; recommended?: boolean }[];
+        originLabel: string;
+        roadDistanceKm: number;
+      }>;
     },
   });
 
@@ -113,8 +118,35 @@ export default function PlaceDetailPage() {
         </Link>
         <h1 className="mt-2 text-xl font-bold">{place.name}</h1>
         <p className="text-sm text-gray-500">
-          {place.category} · {"€".repeat(place.priceLevel)} · ★ {place.avgRating}
+          {place.category} · {place.displayCity || place.city} · {"€".repeat(place.priceLevel)} · ★{" "}
+          {place.avgRating}
+          {place.ratingCount ? ` (${place.ratingCount})` : ""}
         </p>
+        {(place.website || place.phone) && (
+          <p className="mt-1 text-xs text-gray-600">
+            {place.phone && <span>{place.phone} · </span>}
+            {place.website && (
+              <a
+                href={place.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-red-600 underline"
+              >
+                Website
+              </a>
+            )}
+          </p>
+        )}
+        {place.googleMapsUrl && (
+          <a
+            href={place.googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-block text-xs text-red-600 underline"
+          >
+            Open in Google Maps
+          </a>
+        )}
         {place.feelsLike && (
           <p className="mt-2 italic text-sm text-gray-700">{place.feelsLike}</p>
         )}
@@ -127,7 +159,10 @@ export default function PlaceDetailPage() {
           ))}
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          {place.address}, {place.city}
+          {place.address}
+          {place.displayCity || place.city
+            ? ` · ${place.displayCity || place.city}`
+            : ""}
         </p>
 
         <div className="mt-4 h-40 overflow-hidden rounded">
@@ -138,12 +173,22 @@ export default function PlaceDetailPage() {
         <div className="mt-2 mb-3">
           <DirectionLinks lat={place.lat} lng={place.lng} name={place.name} />
         </div>
+        {transport && (
+          <p className="mb-2 text-xs text-gray-500">
+            {transport.originLabel} · ~{transport.roadDistanceKm} km by road
+            (estimate — use Google Maps for exact route)
+          </p>
+        )}
         <div className="space-y-1">
-          {transport?.map(
-            (tr: { mode: string; label: string }) => (
+          {transport?.options?.map(
+            (tr: { mode: string; label: string; recommended?: boolean }) => (
               <div
                 key={tr.mode}
-                className="rounded border bg-white px-3 py-2 text-sm"
+                className={`rounded border px-3 py-2 text-sm ${
+                  tr.recommended
+                    ? "border-blue-300 bg-blue-50"
+                    : "border-gray-200 bg-white"
+                }`}
               >
                 {tr.label}
               </div>
